@@ -560,13 +560,15 @@
           <div class="lx-resize-top" data-id="${b.id}"></div>
           <div class="lx-resize" data-id="${b.id}"></div>`;
       } else {
+        // Short block: NO resize handles — the whole block is a tap target.
+        // (Resizing a sub-hour block by dragging on a phone was never precise;
+        // tap it and edit Length in the panel instead.)
         if(hpx<24) el.style.padding="2px 9px";
+        el.dataset.tapOnly="1";
         el.innerHTML=`<div class="bt" style="color:${A.color}; display:flex; gap:7px; align-items:baseline;">
             <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${A.label}</span>
             <span style="color:var(--txt2); font-weight:400; font-size:10.5px; flex-shrink:0; font-variant-numeric:tabular-nums;">${fmt12(b.start)}</span>
-          </div>
-          <div class="lx-resize-top" data-id="${b.id}"></div>
-          <div class="lx-resize" data-id="${b.id}"></div>`;
+          </div>`;
       }
       layer.appendChild(el);
     });
@@ -669,7 +671,9 @@ Respond ONLY with valid JSON, no fences:
     window.addEventListener("pointermove",onPointerMove); window.addEventListener("pointerup",onPointerUp);
   }
   function onPointerMove(e){ if(!drag)return; const dh=(e.clientY-drag.startY)/PXH;
-    if(Math.abs(e.clientY-drag.startY)>4) dragMoved=true;
+    // 8px threshold (up from 4) — on a phone, a tap wobbles a few px; don't treat
+    // that as a drag, or small blocks become impossible to tap open.
+    if(Math.abs(e.clientY-drag.startY)>8) dragMoved=true;
     if(!dragMoved)return;
     e.preventDefault();
     if(drag.mode==="move"){
