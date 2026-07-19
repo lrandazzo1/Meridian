@@ -1020,15 +1020,17 @@ Placement principles:
   const aiText=document.getElementById("lx-ai-text"),aiTime=document.getElementById("lx-ai-time"),aiResp=document.getElementById("lx-ai-response");
   const descInput=document.getElementById("lx-desc");
 
-  // ---- DESCRIBE YOUR DAY -> full schedule ----
+// ---- DESCRIBE YOUR DAY -> full schedule ----
   async function buildDay(){
     const text=descInput.value.trim(); if(!text)return;
     aiResp.innerHTML=`<div class="lx-ai"><span class="lx-loading" style="color:var(--txt2)"></span></div>`;
     const knownTypes=Object.keys(ACT).join(", ");
+    const sys=profileText()+`
+
+The user describes their whole day in plain language. Convert it into a full optimized schedule. Use known activity types where they fit (${knownTypes}); for anything else use type "custom" with your own label and a category (circadian|cognitive|recovery|physical|neutral). CRITICAL: You MUST use 'neutral' for all commutes, hygiene (showers), casual rest, and general logistics. Only use biological categories for intentional physiological interventions. Place everything at physiologically sound times consistent with the user's description AND anchors — respect explicit times they give, optimize the rest. Keep it realistic (don't invent activities they didn't mention, but you may add an obvious wind-down if they read before bed).
+
 Respond ONLY with valid JSON, no fences:
-{"activityLabel":"1-3 words","idealTime":"H:MM AM/PM","durationHours":number,"verdict":"one sentence","reasoning":"1-4 sentences","category":"circadian|cognitive|recovery|physical|neutral (USE NEUTRAL FOR LOGISTICS/COMMUTES/HYGIENE)"}`;
-Respond ONLY with valid JSON, no fences:
-{"blocks":[{"type":"known-type-or-custom","label":"only if custom","category":"only if custom","start":"H:MM AM/PM","durationHours":number}], "note":"one sentence on how you placed things"}`;
+{"blocks":[{"type":"known-type-or-custom","label":"only if custom","category":"only if custom","start":"H:MM AM/PM","durationHours":number}], "note":"one sentence on how you placed things"};
     const usr=`User's description: "${text}"`;
     try{
       const raw=await callAI(sys,usr); const r=JSON.parse(raw.replace(/```json|```/g,"").trim());
@@ -1052,7 +1054,7 @@ Respond ONLY with valid JSON, no fences:
 Interpret a free-text activity and place it at the single best time given the fixed workday and existing plan.${forced!=null?` The user REQUESTED ${fmt12(forced)} — evaluate THAT placement.`:""} Depth by stakes.
 
 Respond ONLY with valid JSON, no fences:
-{"activityLabel":"1-3 words","idealTime":"H:MM AM/PM","durationHours":number,"verdict":"one sentence","reasoning":"1-4 sentences","category":"circadian|cognitive|recovery|physical|neutral"}`;
+{"activityLabel":"1-3 words","idealTime":"H:MM AM/PM","durationHours":number,"verdict":"one sentence","reasoning":"1-4 sentences","category":"circadian|cognitive|recovery|physical|neutral (USE NEUTRAL FOR LOGISTICS/COMMUTES/HYGIENE)"};
     const usr=`Activity: "${text}"${forced!=null?`\nRequested: ${fmt12(forced)}`:""}\n\n${dayContext()}`;
     try{
       const raw=await callAI(sys,usr); const r=JSON.parse(raw.replace(/```json|```/g,"").trim());
