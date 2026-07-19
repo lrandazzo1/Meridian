@@ -48,7 +48,7 @@
     .lx-week{ gap:4px; margin-bottom:12px; }
     .lx-hero{ padding:18px 14px !important; margin-bottom:14px; }
     .lx-rowlabel{ width:52px !important; font-size:9px !important; }
-    .lx-worklayer,.lx-blocklayer{ left:52px !important; }
+    .lx-worklayer,.lx-blocklayer,.lx-energylayer{ left:52px !important; }
     .lx-palette{ gap:5px; margin-bottom:12px; }
     .lx-chip{ font-size:11px; padding:5px 9px; }
     .lx-field{ height:40px; }
@@ -80,6 +80,13 @@
   .lx-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; gap:16px; flex-wrap:wrap; }
   .lx-wordmark{ font-family:'Fraunces',serif; font-size:20px; font-weight:500; letter-spacing:0.02em; }
   .lx-wordmark .dot{ color:var(--gold); }
+  .lx-intro{ background:linear-gradient(180deg, rgba(198,169,104,0.08), rgba(198,169,104,0.03)); border:1px solid var(--gold-dim);
+             border-radius:14px; padding:18px 20px; margin-bottom:18px; }
+  .lx-intro-title{ font-family:'Fraunces',serif; font-size:17px; color:var(--gold); margin-bottom:8px; }
+  .lx-intro-text{ font-size:13px; line-height:1.6; color:var(--txt); }
+  .lx-intro-text b{ color:var(--gold); font-weight:500; }
+  .lx-intro-btns{ display:flex; gap:10px; margin-top:14px; }
+  @media(max-width:700px){ .lx-intro-btns{ flex-direction:column; } .lx-intro-btns .lx-btn{ width:100%; } }
   .lx-sub{ font-size:11px; color:var(--txt3); letter-spacing:0.14em; text-transform:uppercase; margin-top:3px; }
 
   /* editable anchors */
@@ -145,6 +152,14 @@
   .lx-worklabel{ position:absolute; right:8px; top:4px; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold-dim); }
   .lx-sleeplayer{ position:absolute; left:66px; right:0; background:rgba(140,123,154,0.05); pointer-events:none; }
   .lx-blocklayer{ position:absolute; top:0; bottom:0; left:66px; right:0; }
+  .lx-energylayer{ position:absolute; top:0; bottom:0; left:66px; right:0; pointer-events:none; z-index:0; }
+  .lx-energy-label{ position:absolute; top:8px; left:74px; z-index:5; display:flex; align-items:center; gap:6px;
+    background:rgba(20,20,22,0.82); border:1px solid var(--line2); border-radius:999px; padding:4px 10px;
+    font-family:inherit; font-size:10px; letter-spacing:0.03em; color:var(--txt2); cursor:pointer;
+    backdrop-filter:blur(4px); transition:color .14s, border-color .14s; }
+  .lx-energy-label:hover{ color:var(--txt); border-color:var(--gold-dim); }
+  .lx-energy-label .el-dot{ width:6px; height:6px; border-radius:50%; background:var(--gold); flex-shrink:0; }
+  .lx-energy-label .el-i{ color:var(--gold-dim); font-size:11px; }
 
   .lx-block{ position:absolute; border-radius:8px; padding:6px 9px; cursor:grab; user-select:none; overflow:hidden;
              border:1px solid; transition:box-shadow .14s; }
@@ -196,6 +211,30 @@
   .lx-hero{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:30px 28px 26px;
             margin-bottom:20px; text-align:center; }
   .lx-hero-label{ font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--txt3); margin-bottom:10px; }
+  .lx-hero-top{ display:flex; justify-content:flex-end; margin-bottom:-8px; }
+  .lx-undoredo{ display:flex; gap:6px; }
+  .lx-iconbtn{ width:34px; height:34px; border-radius:8px; background:var(--card2); border:1px solid var(--line2);
+    color:var(--txt2); font-size:16px; cursor:pointer; transition:all .14s; line-height:1; }
+  .lx-iconbtn:hover:not(:disabled){ color:var(--txt); border-color:var(--txt3); }
+  .lx-iconbtn:disabled{ opacity:0.3; cursor:default; }
+  .lx-score-wrap{ position:relative; display:inline-block; }
+  .lx-score-delta{ position:absolute; top:6px; right:-52px; font-size:22px; font-weight:600; font-family:'Inter';
+    font-variant-numeric:tabular-nums; opacity:0; pointer-events:none; }
+  .lx-score-delta.flash{ animation:deltaflash 1.4s ease-out; }
+  /* Fixed floating delta popup — pinned to viewport so it's visible while scrolled
+     down at the timeline (where you're dragging). Shown on all sizes; most useful on mobile. */
+  .lx-delta-pop{ position:fixed; top:calc(env(safe-area-inset-top) + 12px); left:50%; transform:translateX(-50%) translateY(-8px);
+    z-index:300; background:var(--card2); border:1px solid var(--line2); border-radius:999px;
+    padding:8px 18px; font-size:16px; font-weight:600; font-variant-numeric:tabular-nums;
+    box-shadow:0 8px 30px rgba(0,0,0,0.5); opacity:0; pointer-events:none; display:flex; align-items:center; gap:8px; }
+  .lx-delta-pop .dp-score{ color:var(--txt2); font-weight:500; font-size:13px; }
+  .lx-delta-pop.show{ animation:deltapop 1.6s ease-out; }
+  @keyframes deltapop{ 0%{ opacity:0; transform:translateX(-50%) translateY(-8px); }
+    12%{ opacity:1; transform:translateX(-50%) translateY(0); }
+    75%{ opacity:1; transform:translateX(-50%) translateY(0); }
+    100%{ opacity:0; transform:translateX(-50%) translateY(-8px); } }
+  @keyframes deltaflash{ 0%{ opacity:0; transform:translateY(6px); } 15%{ opacity:1; transform:translateY(0); }
+    70%{ opacity:1; transform:translateY(0); } 100%{ opacity:0; transform:translateY(-10px); } }
   .lx-score{ font-family:'Fraunces',serif; font-size:88px; font-weight:400; line-height:0.85;
              font-variant-numeric:lining-nums tabular-nums; letter-spacing:-0.02em; }
   .lx-score .slash{ font-size:26px; color:var(--txt3); font-family:'Inter'; letter-spacing:0; }
@@ -251,6 +290,7 @@
 
 <div class="lx" style="position:relative;">
   <div class="lx-toast" id="lx-toast"></div>
+  <div class="lx-delta-pop" id="lx-delta-pop"></div>
   <div class="lx-head">
     <div>
       <div class="lx-wordmark">MERIDIAN<span class="dot">.</span></div>
@@ -261,6 +301,17 @@
       <div class="lx-anchor"><div class="al">Sleep</div><span class="av" id="an-sleep" data-anchor="sleep"></span></div>
       <div class="lx-anchor"><div class="al">Work start</div><span class="av" id="an-workstart" data-anchor="workStart"></span></div>
       <div class="lx-anchor"><div class="al">Work end</div><span class="av" id="an-workend" data-anchor="workEnd"></span></div>
+    </div>
+  </div>
+
+  <div class="lx-intro" id="lx-intro">
+    <div class="lx-intro-body">
+      <div class="lx-intro-title">Welcome to Meridian</div>
+      <div class="lx-intro-text">This scores your day against your circadian biology — how well your schedule fits your body's natural rhythms. This is a <b>sample day</b> to explore. Set your <b>wake/sleep times</b> up top, drag activities on the timeline, and tap any block → <b>Why</b> for the reasoning. Hit <b>Optimize this day</b> for a full breakdown.</div>
+      <div class="lx-intro-btns">
+        <button class="lx-btn" id="lx-intro-explore">Explore the sample</button>
+        <button class="lx-btn ghost" id="lx-intro-fresh">Start fresh</button>
+      </div>
     </div>
   </div>
 
@@ -285,8 +336,17 @@
   <div class="lx-palette" id="lx-palette"></div>
 
   <div class="lx-hero" id="lx-hero">
+    <div class="lx-hero-top">
+      <div class="lx-undoredo">
+        <button class="lx-iconbtn" id="lx-undo" title="Undo" disabled>↶</button>
+        <button class="lx-iconbtn" id="lx-redo" title="Redo" disabled>↷</button>
+      </div>
+    </div>
     <div class="lx-hero-label">Alignment · <span id="lx-dayname"></span></div>
-    <div class="lx-score" id="lx-score">—<span class="slash"> / 100</span></div>
+    <div class="lx-score-wrap">
+      <div class="lx-score" id="lx-score">—<span class="slash"> / 100</span></div>
+      <span class="lx-score-delta" id="lx-score-delta"></span>
+    </div>
     <div class="lx-verdict" id="lx-verdict"></div>
     <div class="lx-subs" id="lx-subs"></div>
     <button class="lx-btn" id="lx-optimize" style="margin-top:20px; min-width:220px;">◆ Optimize this day</button>
@@ -325,6 +385,41 @@
   let current=1; // Monday
   let uid=1;
   let copyBuffer=null;
+  let history=[], future=[]; // undo stack, redo stack — snapshots of {anchors, week, current}
+  let lastScore=null;        // for the score-delta indicator
+  let suppressHistory=false; // don't record history while applying an undo/redo
+
+  function snapshot(){ return JSON.stringify({ anchors, week, current }); }
+  function restoreSnapshot(snap){
+    const s=JSON.parse(snap);
+    anchors=s.anchors; week=s.week; current=s.current;
+  }
+  function pushHistory(){
+    if(suppressHistory) return;
+    history.push(snapshot());
+    if(history.length>100) history.shift(); // cap memory
+    future=[]; // any new edit clears the redo stack
+    updateUndoButtons();
+  }
+  function doUndo(){
+    if(!history.length) return;
+    future.push(snapshot());
+    restoreSnapshot(history.pop());
+    suppressHistory=true; renderAll(); suppressHistory=false;
+    updateUndoButtons();
+  }
+  function doRedo(){
+    if(!future.length) return;
+    history.push(snapshot());
+    restoreSnapshot(future.pop());
+    suppressHistory=true; renderAll(); suppressHistory=false;
+    updateUndoButtons();
+  }
+  function updateUndoButtons(){
+    const u=document.getElementById("lx-undo"), r=document.getElementById("lx-redo");
+    if(u) u.disabled=!history.length;
+    if(r) r.disabled=!future.length;
+  }
 
   // ---------- PERSISTENCE (localStorage) ----------
   const STORE_KEY="meridian_state_v1";
@@ -465,6 +560,37 @@
   const pal=document.getElementById("lx-palette");
   const weekEl=document.getElementById("lx-week");
 
+  // energy label → explanation modal (delegated, since the label is rebuilt each render)
+  tl.addEventListener("click",e=>{
+    if(e.target.closest(".lx-energy-label")) openEnergyInfo();
+  });
+  function openEnergyInfo(){
+    const wrap=document.createElement("div"); wrap.className="lx-sheet"; wrap.id="lx-energy-info";
+    wrap.innerHTML=`<div class="lx-sheet-in">
+      <div class="sh-top">
+        <div><div class="sh-title" style="color:var(--gold)">Your energy curve</div>
+        <div class="sh-time">Predicted alertness through the day</div></div>
+        <span class="sh-x" id="en-close">✕</span>
+      </div>
+      <div style="font-size:13px; line-height:1.65; color:var(--txt);">
+        The gold line is your body's predicted <b>alertness</b> across the day, based on your circadian rhythm and anchored to your wake and sleep times.
+        <div style="margin-top:12px;">It follows the pattern most people share:</div>
+        <ul style="margin:8px 0 0; padding-left:18px; color:var(--txt2);">
+          <li style="margin-bottom:5px;"><b style="color:var(--txt)">Morning rise</b> — cortisol climbs after you wake, peaking ~2–3 hours later. Your sharpest window.</li>
+          <li style="margin-bottom:5px;"><b style="color:var(--txt)">Post-lunch dip</b> — a natural trough in the early afternoon.</li>
+          <li style="margin-bottom:5px;"><b style="color:var(--txt)">Second wind</b> — a moderate afternoon recovery.</li>
+          <li><b style="color:var(--txt)">Evening decline</b> — alertness fades as melatonin rises before sleep.</li>
+        </ul>
+        <div style="margin-top:14px; color:var(--txt2);">Place demanding work where the line is high, and lighter tasks in the dips. Change your wake or sleep time and the whole curve shifts with you.</div>
+      </div>
+      <div class="sh-btns"><button class="lx-btn" id="en-ok">Got it</button></div>
+    </div>`;
+    document.querySelector(".lx").appendChild(wrap);
+    wrap.addEventListener("click",ev=>{ if(ev.target===wrap)wrap.remove(); });
+    document.getElementById("en-close").addEventListener("click",()=>wrap.remove());
+    document.getElementById("en-ok").addEventListener("click",()=>wrap.remove());
+  }
+
   Object.entries(ACT).forEach(([k,A])=>{
     const c=document.createElement("div"); c.className="lx-chip";
     c.innerHTML=`<span class="swatch" style="background:${A.color}"></span>${A.label}`;
@@ -508,9 +634,67 @@
       const wl=document.createElement("div"); wl.className="lx-worklabel"; wl.textContent="Workday"; band.appendChild(wl);
       work.appendChild(band); tl.appendChild(work);
     }
+    // ---- Circadian energy wave (predicted alertness through the day) ----
+    // Anchored to wake/sleep. Models: sharp cortisol rise after waking to a
+    // mid-morning peak, a post-lunch dip, an afternoon second wind, then decline
+    // into melatonin onset before sleep. Drawn behind the blocks.
+    const energyLayer=document.createElement("div");
+    energyLayer.className="lx-energylayer";
+    const wPx=1000; // virtual width for the SVG path; scales via viewBox
+    const totalH=(END_H-START_H)*PXH;
+    const pts=[];
+    for(let t=START_H; t<=END_H; t+=0.25){
+      const e=energyAt(t); // 0..1
+      const y=(t-START_H)*PXH;
+      const x=wPx*(0.12 + 0.8*e); // higher energy → further right (bulges right at peaks)
+      pts.push([x,y]);
+    }
+    const path=pts.map((p,i)=>(i===0?"M":"L")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+    // close the path along the left edge to make a fillable ribbon
+    const fillPath=path+` L0,${totalH} L0,0 Z`;
+    energyLayer.innerHTML=`<svg viewBox="0 0 ${wPx} ${totalH}" preserveAspectRatio="none" width="100%" height="100%" style="display:block;">
+      <defs>
+        <linearGradient id="engrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="rgba(198,169,104,0.03)"/>
+          <stop offset="100%" stop-color="rgba(198,169,104,0.16)"/>
+        </linearGradient>
+      </defs>
+      <path d="${fillPath}" fill="url(#engrad)"/>
+      <path d="${path}" fill="none" stroke="rgba(198,169,104,0.5)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+    </svg>`;
+    tl.appendChild(energyLayer);
+
+    // tappable energy label — names the line, opens a full explanation on tap
+    const enLabel=document.createElement("button");
+    enLabel.className="lx-energy-label"; enLabel.id="lx-energy-label";
+    enLabel.innerHTML=`<span class="el-dot"></span>Predicted energy from your rhythm <span class="el-i">ⓘ</span>`;
+    tl.appendChild(enLabel);
+
     const layer=document.createElement("div"); layer.className="lx-blocklayer"; layer.id="lx-layer";
     tl.appendChild(layer);
     layer.addEventListener("pointerdown",onPointerDown);
+  }
+
+  // Predicted alertness 0..1 at decimal hour t, anchored to the user's wake/sleep.
+  function energyAt(t){
+    const wake=anchors.wake, sleep=anchors.sleep;
+    if(t<=wake) return 0.06;                 // pre-wake: minimal
+    if(t>=sleep) return 0.04;                // after target sleep: minimal
+    const since=t-wake;                       // hours since waking
+    // cortisol rise to the day's dominant peak ~2.5h after waking
+    const rise=Math.min(1, since/2.5);
+    const morningPeak=0.95*Math.pow(rise,0.85);
+    // post-lunch dip: trough centered ~6h after wake
+    const dip=0.30*Math.exp(-Math.pow(since-6,2)/(2*1.2*1.2));
+    // afternoon second wind: a MODEST bump ~9.5h after wake (never exceeds morning)
+    const secondWind=0.22*Math.exp(-Math.pow(since-9.5,2)/(2*1.8*1.8));
+    // steady mild decline (homeostatic sleep pressure building through the day)
+    const drift=0.03*since;
+    // evening fade: melatonin onset ~2.5h before sleep
+    const toSleep=sleep-t;
+    const eveningFade=toSleep<3 ? Math.max(0, toSleep/3) : 1;
+    let e=(morningPeak - dip + secondWind - drift)*eveningFade;
+    return Math.max(0.04, Math.min(1, e));
   }
 
   function computeLanes(bs){
@@ -700,8 +884,46 @@ Respond ONLY with valid JSON, no fences:
     document.getElementById("lx-dayname").textContent=DAYFULL[current];
     const scoreEl=document.getElementById("lx-score"),verdEl=document.getElementById("lx-verdict");
     if(!blocks.length){ scoreEl.innerHTML=`—<span class="slash"> / 100</span>`; verdEl.textContent="";
-      document.getElementById("lx-subs").innerHTML=""; document.getElementById("lx-flags").innerHTML='<div class="lx-empty">Build your day to surface conflicts.</div>'; return; }
+      document.getElementById("lx-subs").innerHTML=""; document.getElementById("lx-flags").innerHTML='<div class="lx-empty">Build your day to surface conflicts.</div>'; lastScore=null; return; }
+    // Confidence floor: a day with only a couple of blocks can't be meaningfully scored —
+    // empty pillars default high and produce a misleadingly good number. Require enough
+    // coverage before showing a real score.
+    const MIN_BLOCKS=4;
+    if(blocks.length<MIN_BLOCKS){
+      const need=MIN_BLOCKS-blocks.length;
+      scoreEl.innerHTML=`<span style="font-size:34px; color:var(--txt3);">—</span>`;
+      verdEl.innerHTML=`<span style="color:var(--txt2)">Add ${need} more ${need===1?'activity':'activities'} to score your day</span>`;
+      document.getElementById("lx-subs").innerHTML="";
+      // still surface conflicts for what's there
+      const fl=document.getElementById("lx-flags");
+      if(!r.flags.length) fl.innerHTML=`<div class="lx-empty">Keep building — conflicts appear as your day fills in.</div>`;
+      else fl.innerHTML=r.flags.map(f=>{ const c=f.sev==="red"?"var(--red)":"var(--amber)"; const bc=f.sev==="red"?"rgba(181,101,79,0.4)":"rgba(199,154,78,0.35)";
+        return `<div class="lx-flag" style="border-color:${bc}"><span style="color:${c}">${f.msg}</span><span class="ff">→ ${f.fix}</span></div>`; }).join("");
+      lastScore=null; // reset so no delta flashes across the gate
+      return;
+    }
     scoreEl.innerHTML=`${r.total}<span class="slash"> / 100</span>`; scoreEl.style.color=scoreColor(r.total);
+    // Score-delta flash: show +/- change from the last score
+    if(lastScore!==null && r.total!==lastScore){
+      const diff=r.total-lastScore;
+      const col=diff>0?"var(--green)":"var(--red)";
+      const sign=(diff>0?"+":"")+diff;
+      // inline flash next to the big score
+      const deltaEl=document.getElementById("lx-score-delta");
+      if(deltaEl){
+        deltaEl.textContent=sign; deltaEl.style.color=col;
+        deltaEl.classList.remove("flash"); void deltaEl.offsetWidth;
+        deltaEl.classList.add("flash");
+      }
+      // floating popup pinned to the top of the viewport — visible while scrolled at the timeline
+      const pop=document.getElementById("lx-delta-pop");
+      if(pop){
+        pop.innerHTML=`<span style="color:${col}">${sign}</span><span class="dp-score">→ ${r.total}</span>`;
+        pop.classList.remove("show"); void pop.offsetWidth;
+        pop.classList.add("show");
+      }
+    }
+    lastScore=r.total;
     verdEl.textContent=r.total>=82?"Precision-aligned":r.total>=64?"Refinements available":"Working against your physiology";
     const subs=[["Circadian",r.sub.circadian,""],["Cognitive",r.sub.cognitive,""],["Recovery",r.sub.recovery,""],["Consistency",r.sub.consistency,r.consistencyMeta.note||""]];
     document.getElementById("lx-subs").innerHTML=subs.map(([n,v,hint])=>`
@@ -718,7 +940,21 @@ Respond ONLY with valid JSON, no fences:
   function scoreColor(v){ return v>=82?"#7F9A6B":v>=64?"#C79A4E":"#B5654F"; }
   function hexA(hex,a){ const n=parseInt(hex.slice(1),16); return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`; }
 
-  function renderAll(){ renderWeek(); renderAnchors(); buildTimeline(); render(); saveState(); }
+  let _lastRenderedSnap=null;
+  function renderAll(){
+    // record the PREVIOUS committed state into history before this change lands
+    if(!suppressHistory && _lastRenderedSnap!==null){
+      const now=snapshot();
+      if(now!==_lastRenderedSnap){
+        history.push(_lastRenderedSnap);
+        if(history.length>100) history.shift();
+        future=[];
+        updateUndoButtons();
+      }
+    }
+    renderWeek(); renderAnchors(); buildTimeline(); render(); saveState();
+    _lastRenderedSnap=snapshot();
+  }
 
   function toast(msg){ const t=document.getElementById("lx-toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1600); }
 
@@ -923,6 +1159,13 @@ Respond ONLY with valid JSON, no fences:
   window.addEventListener("pagehide", saveState);
   document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden") saveState(); });
 
+  document.getElementById("lx-undo").addEventListener("click",doUndo);
+  document.getElementById("lx-redo").addEventListener("click",doRedo);
+  document.addEventListener("keydown",e=>{
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="z" && !e.shiftKey){ e.preventDefault(); doUndo(); }
+    else if((e.ctrlKey||e.metaKey) && (e.key.toLowerCase()==="y" || (e.key.toLowerCase()==="z"&&e.shiftKey))){ e.preventDefault(); doRedo(); }
+  });
+
   document.getElementById("lx-desc-go").addEventListener("click",buildDay);
 
   // ---------- VOICE INPUT (Web Speech API) ----------
@@ -973,11 +1216,27 @@ Respond ONLY with valid JSON, no fences:
 
   // ---------- STARTUP: load saved state, or seed a sample day the first time ----------
   const SAMPLE=[["light",6.5],["cardio",7],["caffeine",7.5],["deepwork",9],["meetings",11],["meal",12.5],["meetings",14],["training",17.5],["meal",18.5],["reading",20.5],["winddown",20.75]];
+  const seedSample=()=>{ week=DAYS.map(()=>[]); week[1]=SAMPLE.map(([t,s])=>({id:uid++,type:t,start:s,dur:ACT[t].dur})); current=1; };
   if(!loadState()){
     // no saved data yet → seed the sample Monday so the app isn't empty on first open
-    week[1]=SAMPLE.map(([t,s])=>({id:uid++,type:t,start:s,dur:ACT[t].dur}));
+    seedSample();
   }
   renderAll();
+
+  // ---------- FIRST-RUN INTRO BANNER ----------
+  (function(){
+    const intro=document.getElementById("lx-intro");
+    const SEEN_KEY="meridian_intro_seen_v1";
+    let seen=false;
+    try{ seen=localStorage.getItem(SEEN_KEY)==="1"; }catch(e){}
+    if(seen){ intro.style.display="none"; return; }
+    const dismiss=()=>{ try{ localStorage.setItem(SEEN_KEY,"1"); }catch(e){} intro.style.display="none"; };
+    document.getElementById("lx-intro-explore").addEventListener("click",dismiss);
+    document.getElementById("lx-intro-fresh").addEventListener("click",()=>{
+      week=DAYS.map(()=>[]); current=1; renderAll(); dismiss();
+      toast("Fresh week — build your day");
+    });
+  })();
 })();
 </script>
 
