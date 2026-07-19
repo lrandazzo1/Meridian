@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+<title>Meridian — Circadian Performance</title>
+<meta name="description" content="Score your day against your physiology." />
+
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#0A0A0B" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Meridian" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<link rel="icon" href="/icon-192.png" />
+
+<style>
+  html,body{ margin:0; padding:0; background:#0A0A0B; -webkit-tap-highlight-color:transparent; }
+  body{ padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+
+  /* ---- MOBILE RESPONSIVE ---- */
+  @media (max-width:700px){
+    .lx{ padding:14px !important; border-radius:0 !important; }
+    .lx-head{ flex-direction:column; gap:12px; }
+    .lx-anchors{ width:100%; justify-content:space-between; gap:10px; }
+    .lx-anchor{ text-align:left; flex:1; }
+    .lx-describe{ flex-direction:column; }
+    .lx-describe .lx-btn{ width:100%; }
+    .lx-inputrow{ flex-direction:column; }
+    .lx-inputrow .lx-field,.lx-inputrow .lx-btn{ width:100%; }
+    .lx-time{ width:100% !important; }
+    .lx-score{ font-size:64px !important; }
+    .lx-subs{ grid-template-columns:repeat(2,1fr) !important; gap:14px !important; }
+    .lx-lower{ grid-template-columns:1fr !important; }
+    .lx-day{ width:36px; height:36px; }
+    .lx-hero{ padding:22px 16px !important; }
+    .lx-rowlabel{ width:54px !important; font-size:9.5px !important; }
+    .lx-worklayer,.lx-blocklayer{ left:54px !important; }
+    .lx-palette{ gap:5px; }
+    .lx-chip{ font-size:11px; padding:6px 10px; }
+  }
+</style>
+</head>
+<body>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&display=swap');
+
+  .lx { --bg:#0A0A0B; --card:#141416; --card2:#1B1B1E; --line:#2A2A2E; --line2:#38383D;
+        --gold:#C6A968; --gold-dim:#8C7B4E; --txt:#EDEBE6; --txt2:#9A988F; --txt3:#62615B;
+        --green:#7F9A6B; --amber:#C79A4E; --red:#B5654F;
+        font-family:'Inter',-apple-system,sans-serif; color:var(--txt); background:var(--bg);
+        border-radius:16px; padding:26px; box-sizing:border-box; }
+  .lx *{ box-sizing:border-box; }
+  .lx button{ font-family:inherit; }
+
+  .lx-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; gap:16px; flex-wrap:wrap; }
+  .lx-wordmark{ font-family:'Fraunces',serif; font-size:20px; font-weight:500; letter-spacing:0.02em; }
+  .lx-wordmark .dot{ color:var(--gold); }
+  .lx-sub{ font-size:11px; color:var(--txt3); letter-spacing:0.14em; text-transform:uppercase; margin-top:3px; }
+
+  /* editable anchors */
+  .lx-anchors{ display:flex; gap:18px; align-items:center; }
+  .lx-anchor{ text-align:right; }
+  .lx-anchor .al{ font-size:9.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--txt3); margin-bottom:3px; }
+  .lx-anchor .av{ font-size:12px; color:var(--txt); font-variant-numeric:tabular-nums; cursor:pointer;
+                  border-bottom:1px dashed var(--line2); padding-bottom:1px; display:inline-block; }
+  .lx-anchor .av:hover{ color:var(--gold); border-color:var(--gold-dim); }
+  .lx-anchor input{ background:var(--card); border:1px solid var(--gold-dim); border-radius:6px; color:var(--txt);
+                    font-family:inherit; font-size:12px; width:92px; text-align:center; padding:4px; outline:none; }
+
+  /* week tabs */
+  .lx-week{ display:flex; gap:5px; margin-bottom:18px; align-items:center; flex-wrap:wrap; }
+  .lx-day{ width:38px; height:38px; border-radius:9px; border:1px solid var(--line); background:var(--card);
+           color:var(--txt2); font-size:13px; font-weight:500; cursor:pointer; transition:all .14s; position:relative;
+           display:flex; align-items:center; justify-content:center; }
+  .lx-day:hover{ border-color:var(--line2); color:var(--txt); }
+  .lx-day.active{ background:var(--gold); color:#1A1608; border-color:var(--gold); }
+  .lx-day .fill{ position:absolute; bottom:4px; left:50%; transform:translateX(-50%); width:4px; height:4px;
+                 border-radius:50%; background:var(--gold-dim); }
+  .lx-day.active .fill{ background:#1A1608; }
+  .lx-weekactions{ margin-left:auto; display:flex; gap:6px; }
+
+  .lx-field{ background:var(--card); border:1px solid var(--line); border-radius:10px; color:var(--txt);
+             font-family:inherit; font-size:13px; padding:0 14px; height:42px; outline:none; transition:border-color .15s; }
+  .lx-field::placeholder{ color:var(--txt3); }
+  .lx-field:focus{ border-color:var(--gold-dim); }
+  .lx-field.grow{ flex:1; min-width:180px; }
+  .lx-time{ width:104px; text-align:center; letter-spacing:0.03em; }
+  .lx-btn{ background:var(--gold); color:#1A1608; border:none; border-radius:10px; height:42px; padding:0 18px;
+           font-size:13px; font-weight:600; letter-spacing:0.02em; cursor:pointer; transition:filter .15s, transform .08s; white-space:nowrap; }
+  .lx-btn:hover{ filter:brightness(1.08); } .lx-btn:active{ transform:scale(0.98); }
+  .lx-btn.ghost{ background:transparent; color:var(--txt2); border:1px solid var(--line2); }
+  .lx-btn.ghost:hover{ color:var(--txt); border-color:var(--txt3); filter:none; }
+  .lx-btn.sm{ height:34px; padding:0 12px; font-size:11.5px; font-weight:500; letter-spacing:0.04em; }
+
+  .lx-describe{ display:flex; gap:10px; margin-bottom:12px; }
+  #lx-mic{ flex-shrink:0; font-size:15px; padding:0 14px; }
+  #lx-mic.listening{ background:var(--red); color:#fff; border-color:var(--red); animation:micpulse 1.1s ease-in-out infinite; }
+  @keyframes micpulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(181,101,79,0.5); } 50%{ box-shadow:0 0 0 8px rgba(181,101,79,0); } }
+  .lx-inputrow{ display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+
+  .lx-palette{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:16px; }
+  .lx-chip{ font-size:12px; letter-spacing:0.02em; padding:7px 13px; border-radius:8px; cursor:pointer;
+            background:var(--card); border:1px solid var(--line); color:var(--txt2); transition:all .14s;
+            display:flex; align-items:center; gap:7px; user-select:none; }
+  .lx-chip:hover{ border-color:var(--line2); color:var(--txt); }
+  .lx-chip .swatch{ width:7px; height:7px; border-radius:50%; }
+
+  .lx-panel{ background:var(--card); border:1px solid var(--line); border-radius:14px; }
+
+  .lx-timeline{ position:relative; border-radius:14px; overflow:hidden; border:1px solid var(--line); background:var(--card); }
+  .lx-row{ display:flex; height:46px; border-top:1px solid rgba(255,255,255,0.035); }
+  .lx-row:first-child{ border-top:none; }
+  .lx-rowlabel{ width:66px; flex-shrink:0; font-size:10.5px; color:var(--txt3); letter-spacing:0.04em;
+                padding:5px 10px; border-right:1px solid var(--line); font-variant-numeric:tabular-nums;
+                display:flex; justify-content:flex-end; }
+  .lx-rowslot{ flex:1; position:relative; }
+  .lx-worklayer{ position:absolute; top:0; bottom:0; left:66px; right:0; pointer-events:none; }
+  .lx-workband{ position:absolute; left:0; right:0; background:rgba(198,169,104,0.045);
+                border-top:1px solid rgba(198,169,104,0.18); border-bottom:1px solid rgba(198,169,104,0.18); }
+  .lx-worklabel{ position:absolute; right:8px; top:4px; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold-dim); }
+  .lx-sleeplayer{ position:absolute; left:66px; right:0; background:rgba(140,123,154,0.05); pointer-events:none; }
+  .lx-blocklayer{ position:absolute; top:0; bottom:0; left:66px; right:0; }
+
+  .lx-block{ position:absolute; border-radius:8px; padding:6px 9px; cursor:grab; user-select:none; overflow:hidden;
+             border:1px solid; transition:box-shadow .14s; }
+  .lx-block:hover{ box-shadow:0 4px 20px rgba(0,0,0,0.4); }
+  .lx-block:active{ cursor:grabbing; }
+  .lx-block .bt{ font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .lx-block .bs{ font-size:10px; color:var(--txt2); margin-top:1px; font-variant-numeric:tabular-nums; }
+  .lx-resize{ position:absolute; left:0; right:0; bottom:0; height:14px; cursor:ns-resize; touch-action:none; }
+  .lx-resize-top{ position:absolute; left:0; right:0; top:0; height:14px; cursor:ns-resize; touch-action:none; }
+  /* short blocks: shrink handles so there's still a tappable body in the middle */
+  .lx-block[data-stretched="1"] .lx-resize,
+  .lx-block[data-stretched="1"] .lx-resize-top{ height:7px; }
+  .lx-block{ touch-action:none; }
+
+  /* tap panel — centered sheet, works on phone and desktop */
+  .lx-sheet{ position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:200; display:flex;
+             align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(3px); }
+  .lx-sheet-in{ background:var(--card); border:1px solid var(--line2); border-radius:16px; padding:20px;
+                width:100%; max-width:400px; max-height:80vh; overflow-y:auto; }
+  .sh-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
+  .sh-title{ font-size:16px; font-weight:500; }
+  .sh-time{ font-size:12px; color:var(--txt2); margin-top:3px; font-variant-numeric:tabular-nums; }
+  .sh-x{ font-size:16px; color:var(--txt3); cursor:pointer; padding:2px 6px; }
+  .sh-x:hover{ color:var(--txt); }
+  .erow{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .erow label{ font-size:12px; color:var(--txt2); width:52px; flex-shrink:0; }
+  .erow input{ flex:1; background:var(--card2); border:1px solid var(--line2); border-radius:8px; color:var(--txt);
+               font-family:inherit; font-size:14px; padding:10px 12px; outline:none; }
+  .erow input:focus{ border-color:var(--gold-dim); }
+  .sh-btns{ display:flex; flex-direction:column; gap:8px; margin-top:14px; }
+  .sh-btns .lx-btn{ width:100%; }
+  .lx-pop{ position:absolute; z-index:60; background:var(--card2); border:1px solid var(--line2); border-radius:9px;
+           padding:9px 12px; min-width:150px; box-shadow:0 8px 30px rgba(0,0,0,0.55); pointer-events:auto; }
+  .lx-pop .pt{ font-size:12px; font-weight:500; margin-bottom:3px; }
+  .lx-pop .ps{ font-size:11px; color:var(--txt2); font-variant-numeric:tabular-nums; margin-bottom:7px; }
+  .lx-pop .pwhy{ font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--gold); cursor:pointer; }
+  .lx-pop .pwhy:hover{ filter:brightness(1.15); }
+  .lx-editor{ position:absolute; z-index:70; background:var(--card2); border:1px solid var(--gold-dim); border-radius:10px;
+              padding:12px 14px; min-width:200px; box-shadow:0 10px 34px rgba(0,0,0,0.6); }
+  .lx-editor .et{ font-size:12px; font-weight:500; margin-bottom:10px; }
+  .lx-editor .erow{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .lx-editor .erow label{ font-size:11px; color:var(--txt2); width:42px; }
+  .lx-editor input{ flex:1; background:var(--card); border:1px solid var(--line2); border-radius:7px; color:var(--txt);
+                    font-family:inherit; font-size:12px; padding:6px 9px; outline:none; }
+  .lx-editor input:focus{ border-color:var(--gold-dim); }
+  .lx-editor .erowbtns{ display:flex; gap:7px; margin-top:4px; }
+
+  /* HERO score band — centered, full width, the headline */
+  .lx-hero{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:30px 28px 26px;
+            margin-bottom:20px; text-align:center; }
+  .lx-hero-label{ font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--txt3); margin-bottom:10px; }
+  .lx-score{ font-family:'Fraunces',serif; font-size:88px; font-weight:400; line-height:0.85;
+             font-variant-numeric:lining-nums tabular-nums; letter-spacing:-0.02em; }
+  .lx-score .slash{ font-size:26px; color:var(--txt3); font-family:'Inter'; letter-spacing:0; }
+  .lx-verdict{ font-size:13px; color:var(--txt2); margin-top:12px; letter-spacing:0.02em; }
+  .lx-subs{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:620px; margin:24px auto 0;
+            padding-top:22px; border-top:1px solid var(--line); }
+  @media(max-width:600px){ .lx-subs{ grid-template-columns:repeat(2,1fr); } }
+  .lx-sub{ text-align:left; }
+  .lx-subtop{ display:flex; justify-content:space-between; align-items:baseline; font-size:11px; margin-bottom:7px; }
+  .lx-subtop .n{ color:var(--txt2); letter-spacing:0.03em; }
+  .lx-subtop .v{ color:var(--txt); font-variant-numeric:tabular-nums; font-weight:500; font-size:15px; }
+  .lx-subtop .n .hint{ display:none; }
+  .lx-subhint{ font-size:9.5px; color:var(--txt3); margin-top:5px; letter-spacing:0.02em; min-height:12px; }
+  .lx-track{ height:3px; background:var(--line); border-radius:2px; overflow:hidden; }
+  .lx-fill{ height:100%; border-radius:2px; transition:width .5s cubic-bezier(.2,.7,.2,1); }
+
+  /* lower: timeline + slim side column */
+  .lx-lower{ display:grid; grid-template-columns:1fr 290px; gap:22px; align-items:start; }
+  @media(max-width:680px){ .lx-lower{ grid-template-columns:1fr; } }
+  .lx-side{ }
+
+  .lx-sech{ font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--txt3); margin:20px 0 12px; }
+  .lx-flag{ font-size:12px; line-height:1.5; padding:11px 13px; border-radius:10px; margin-bottom:8px; border:1px solid; background:var(--card); }
+  .lx-flag .ff{ display:block; margin-top:5px; font-size:11px; color:var(--txt2); }
+  .lx-empty{ font-size:12px; color:var(--txt3); font-style:italic; padding:4px 0; }
+
+  .lx-ai{ background:var(--card2); border:1px solid var(--line2); border-radius:12px; padding:15px 17px; margin-bottom:16px; font-size:13px; line-height:1.6; }
+  .lx-ai .aihead{ display:flex; align-items:center; gap:8px; font-weight:500; margin-bottom:7px; color:var(--gold); }
+  .lx-ai .aimeta{ font-size:11px; color:var(--txt3); margin-top:9px; font-variant-numeric:tabular-nums; letter-spacing:0.03em; }
+  .lx-ai .airow{ margin-top:12px; display:flex; gap:9px; flex-wrap:wrap; }
+  .lx-loading::after{ content:"analyzing"; animation:lxdots 1.5s infinite steps(1); }
+  @keyframes lxdots{ 0%{content:"analyzing";}25%{content:"analyzing.";}50%{content:"analyzing..";}75%{content:"analyzing...";} }
+  .lx-pill{ font-size:10px; letter-spacing:0.08em; text-transform:uppercase; padding:2px 9px; border-radius:20px; font-weight:600; }
+  .lx-opt{ background:var(--card2); border:1px solid var(--gold-dim); border-radius:12px; padding:16px 18px; margin:16px auto 0; max-width:620px; text-align:left; font-size:13px; line-height:1.55; }
+  .lx-opt .oh{ font-family:'Fraunces',serif; font-size:15px; color:var(--gold); margin-bottom:12px; }
+  .lx-opt .ogrp{ margin-bottom:13px; }
+  .lx-opt .ogl{ font-size:10px; letter-spacing:0.13em; text-transform:uppercase; margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+  .lx-opt .oitem{ display:flex; gap:8px; margin-bottom:5px; color:var(--txt); }
+  .lx-opt .oitem .om{ flex-shrink:0; margin-top:1px; }
+  .lx-opt .oimp{ background:rgba(198,169,104,0.06); border-left:2px solid var(--gold-dim); padding:8px 11px; border-radius:0 6px 6px 0; margin-bottom:6px; }
+  .lx-opt .oimp .ot{ color:var(--txt); } .lx-opt .oimp .og{ color:var(--txt2); font-size:12px; margin-top:2px; }
+  .opillars{ display:flex; flex-direction:column; gap:14px; margin-bottom:6px; }
+  .opillar-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; }
+  .opillar-name{ font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--txt2); }
+  .opillar-val{ font-size:15px; font-weight:500; font-variant-numeric:tabular-nums; }
+  .opillar-track{ height:3px; background:var(--line); border-radius:2px; overflow:hidden; margin-bottom:7px; }
+  .opillar-fill{ height:100%; border-radius:2px; }
+  .opillar-text{ font-size:12.5px; color:var(--txt); line-height:1.55; }
+  .lx-toast{ position:absolute; top:14px; left:50%; transform:translateX(-50%); background:var(--card2); border:1px solid var(--gold-dim);
+             color:var(--txt); font-size:12px; padding:8px 16px; border-radius:8px; opacity:0; transition:opacity .3s; pointer-events:none; z-index:50; }
+  .lx-toast.show{ opacity:1; }
+</style>
+
+<div class="lx" style="position:relative;">
+  <div class="lx-toast" id="lx-toast"></div>
+  <div class="lx-head">
+    <div>
+      <div class="lx-wordmark">MERIDIAN<span class="dot">.</span></div>
+      <div class="lx-sub">Circadian Performance</div>
+    </div>
+    <div class="lx-anchors">
+      <div class="lx-anchor"><div class="al">Wake</div><span class="av" id="an-wake" data-anchor="wake"></span></div>
+      <div class="lx-anchor"><div class="al">Sleep</div><span class="av" id="an-sleep" data-anchor="sleep"></span></div>
+      <div class="lx-anchor"><div class="al">Work start</div><span class="av" id="an-workstart" data-anchor="workStart"></span></div>
+      <div class="lx-anchor"><div class="al">Work end</div><span class="av" id="an-workend" data-anchor="workEnd"></span></div>
+    </div>
+  </div>
+
+  <div class="lx-week" id="lx-week"></div>
+
+  <div class="lx-describe">
+    <input class="lx-field grow" id="lx-desc" placeholder="Describe your day in plain words — “gym at 6, work 9 to 5 with meetings in the morning, dinner at 7, read before bed”" />
+    <button class="lx-btn ghost" id="lx-mic" title="Speak your day" aria-label="Voice input">🎤</button>
+    <button class="lx-btn" id="lx-desc-go">Build my day</button>
+  </div>
+
+  <div class="lx-inputrow">
+    <input class="lx-field grow" id="lx-ai-text" placeholder="Or add one activity — “sauna after training”, “deep passage reading before bed”…" />
+    <input class="lx-field lx-time" id="lx-ai-time" placeholder="time (opt.)" />
+    <button class="lx-btn" id="lx-ai-add">Add</button>
+    <button class="lx-btn ghost" id="lx-ai-go">Interpret</button>
+  </div>
+  <div id="lx-ai-response"></div>
+
+  <div class="lx-palette" id="lx-palette"></div>
+
+  <div class="lx-hero" id="lx-hero">
+    <div class="lx-hero-label">Alignment · <span id="lx-dayname"></span></div>
+    <div class="lx-score" id="lx-score">—<span class="slash"> / 100</span></div>
+    <div class="lx-verdict" id="lx-verdict"></div>
+    <div class="lx-subs" id="lx-subs"></div>
+    <button class="lx-btn" id="lx-optimize" style="margin-top:20px; min-width:220px;">◆ Optimize this day</button>
+    <div id="lx-optimize-out"></div>
+  </div>
+
+  <div class="lx-lower">
+    <div class="lx-timeline" id="lx-timeline"></div>
+    <div class="lx-side">
+      <div class="lx-sech" style="margin-top:0;">Conflicts</div>
+      <div id="lx-flags"><div class="lx-empty">Build your day to surface conflicts.</div></div>
+      <div id="lx-why"></div>
+      <div style="margin-top:18px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="lx-btn ghost sm" id="lx-copy" style="flex:1;">Copy day</button>
+        <button class="lx-btn ghost sm" id="lx-paste" style="flex:1;">Paste</button>
+        <button class="lx-btn ghost sm" id="lx-clear" style="flex:1;">Clear</button>
+      </div>
+      <button class="lx-btn ghost sm" id="lx-applyweekdays" style="width:100%; margin-top:8px;">Apply to all weekdays</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const DAYFULL=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const START_H=5, END_H=24, PXH=46;
+
+  // ---------- STATE ----------
+  // Anchors are global (same schedule target every day, which is the point).
+  let anchors={ wake:6.5, sleep:21.5, workStart:9, workEnd:17 };
+  // Each day holds its own blocks.
+  let week=DAYS.map(()=>[]);
+  let current=1; // Monday
+  let uid=1;
+  let copyBuffer=null;
+
+  const ACT={
+    light:   {label:"Light exposure",dur:0.5,color:"#C6A968",cat:"circadian",ideal:a=>a.wake+0.5,sigma:1.4,scores:["circadian"]},
+    cardio:  {label:"Fasted cardio",dur:1,color:"#B5654F",cat:"physical",ideal:a=>a.wake+1,sigma:2.0,scores:["circadian","recovery"]},
+    deepwork:{label:"Deep work",dur:2,color:"#6E86B8",cat:"cognitive",workBound:true,ideal:a=>a.workStart+0.5,sigma:4.5,scores:["cognitive"]},
+    meetings:{label:"Meetings",dur:1.5,color:"#7A6EA8",cat:"cognitive",workBound:true,ideal:a=>a.workStart+4.5,sigma:5.0,scores:["cognitive"]},
+    meal:    {label:"Meal",dur:0.75,color:"#7F9A6B",cat:"neutral",ideal:a=>a.wake+5.5,sigma:3.0,scores:[]},
+    training:{label:"Weight training",dur:1.5,color:"#9A7BB5",cat:"physical",ideal:a=>a.wake+9,sigma:2.5,scores:["recovery"]},
+    caffeine:{label:"Caffeine",dur:0.25,color:"#B08A5C",cat:"neutral",ideal:a=>a.wake+1,sigma:4.0,scores:[]},
+    reading: {label:"Nonfiction",dur:0.75,color:"#6B9A8C",cat:"recovery",ideal:a=>a.sleep-1,sigma:2.2,scores:["recovery"]},
+    winddown:{label:"Wind-down",dur:0.75,color:"#8C7B9A",cat:"recovery",ideal:a=>a.sleep-0.75,sigma:1.6,scores:["recovery"]}
+  };
+  const CUSTOM_DEFS={
+    circadian:{ideal:a=>a.wake+1,sigma:2.0,scores:["circadian"]},
+    cognitive:{ideal:a=>a.workStart+0.5,sigma:4.5,scores:["cognitive"],workBound:true},
+    recovery: {ideal:a=>a.sleep-1,sigma:1.2,scores:["recovery","circadian"]},
+    physical: {ideal:a=>a.wake+9,sigma:2.5,scores:["circadian","recovery"]},
+    neutral:  {ideal:a=>a.wake+7,sigma:5.0,scores:[]}
+  };
+
+  // ---------- TIME ----------
+  function fmt12(h){ h=((h%24)+24)%24; let hh=Math.floor(h),mm=Math.round((h-hh)*60);
+    if(mm===60){hh++;mm=0;} const ap=hh>=12?"PM":"AM"; let d=hh%12; if(d===0)d=12;
+    return d+":"+String(mm).padStart(2,"0")+" "+ap; }
+  function fmt12short(h){ h=((h%24)+24)%24; let hh=Math.floor(h); const ap=hh>=12?"PM":"AM"; let d=hh%12; if(d===0)d=12; return d+" "+ap; }
+  function durLabel(d){ const h=Math.floor(d),m=Math.round((d-h)*60); if(h&&m)return h+"h "+m+"m"; if(h)return h+"h"; return m+"m"; }
+  function parseTime(str){ if(str==null)return null; str=(""+str).trim().toLowerCase();
+    let m=str.match(/(\d{1,2}):(\d{2})\s*(am|pm)?/)||str.match(/(\d{1,2})\s*(am|pm)/); if(!m)return null;
+    let h=parseInt(m[1]),min=/^\d+$/.test(m[2])?parseInt(m[2]):0,ap=m[3]||(/^\d+$/.test(m[2])?null:m[2]);
+    if(ap==="pm"&&h<12)h+=12; if(ap==="am"&&h===12)h=0; if(isNaN(min))min=0; return h+min/60; }
+  function parseRange(str){ // "9 to 5", "9am-5pm"
+    if(!str)return null; const m=(""+str).toLowerCase().split(/\s*(?:to|-|–|—|until)\s*/);
+    if(m.length<2)return null; const a=parseTime(m[0]),b=parseTime(m[1]); if(a==null||b==null)return null; return [a,b]; }
+  function round15(h){return Math.round(h*4)/4;}
+  function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+  function blocksNow(){ return week[current]; }
+
+  // ================= ENGINE =================
+  function scoreDay(blocks){
+    const a=anchors;
+    let cir=[],cog=[],rec=[];
+    blocks.forEach(b=>{
+      const A=ACT[b.type]||CUSTOM_DEFS[(b.custom&&b.custom.category)||"neutral"];
+      const ideal=A.ideal(a); const center=b.start+b.dur/2;
+      let g=Math.exp(-Math.pow(center-ideal,2)/(2*A.sigma*A.sigma));
+      // Workday constraint only applies on weekdays. On weekends, work-bound
+      // activities (deep work, meetings) can go anywhere without penalty.
+      const weekday = current>=1 && current<=5;
+      if(A.workBound && weekday){ const inside=b.start>=a.workStart-0.01&&(b.start+b.dur)<=a.workEnd+0.01; if(!inside)g*=0.25; }
+      (A.scores||[]).forEach(s=>{ if(s==="circadian")cir.push(g); if(s==="recovery")rec.push(g); if(s==="cognitive")cog.push(g); });
+    });
+    rec.push(blocks.some(b=>b.type==="winddown"||b.type==="reading")?1:0.55);
+    // Reward-based aggregation. The score should reflect what's WELL-placed.
+    // Mean carries most weight; the worst block only pulls down if it's genuinely
+    // bad (<0.4), and even then gently. A day of well-placed anchors scores high
+    // even alongside neutral logistics like commutes (which don't score at all).
+    const agg=arr=>{
+      if(!arr.length)return 1;
+      const mean=arr.reduce((x,y)=>x+y,0)/arr.length;
+      const min=Math.min(...arr);
+      // only treat as an "offender" if it's actually poor; otherwise ignore it
+      const offender = min<0.4 ? min : mean;
+      return 0.75*mean + 0.25*offender;
+    };
+    const counts={}; blocks.forEach(b=>counts[b.type]=(counts[b.type]||0)+1);
+    let dup=0; ["light","winddown"].forEach(t=>{ if((counts[t]||0)>1)dup+=0.12*(counts[t]-1); });
+    const dwHrs=blocks.filter(b=>b.type==="deepwork").reduce((s,b)=>s+b.dur,0); if(dwHrs>5)dup+=0.10;
+    const dampen=v=>Math.max(0,v*(1-dup));
+    const circadian=Math.round(dampen(agg(cir))*100), cognitive=Math.round(dampen(agg(cog))*100), recovery=Math.round(dampen(agg(rec))*100);
+
+    // ---- REAL consistency: variance of wake/sleep-proxy/meal timing ACROSS built days ----
+    const consistency=computeConsistency();
+
+    const total=Math.round(circadian*0.30+cognitive*0.25+recovery*0.25+consistency.score*0.20);
+
+    const flags=[];
+    blocks.forEach(b=>{
+      const A=ACT[b.type]||{}; const end=b.start+b.dur;
+      if(b.type==="caffeine"&&(a.sleep-b.start)<8) flags.push({sev:"red",msg:`Caffeine at ${fmt12(b.start)} sits under 8 hours before your ${fmt12(a.sleep)} sleep target.`,fix:`Take it before ${fmt12(a.sleep-8)}.`});
+      if(b.type==="training"&&(a.sleep-end)<2) flags.push({sev:"red",msg:`Training ends ${fmt12(end)} — core temperature stays elevated within 2 hours of sleep.`,fix:`Finish by ${fmt12(a.sleep-2)}.`});
+      if(A.workBound && current>=1 && current<=5){ const inside=b.start>=a.workStart-0.01&&end<=a.workEnd+0.01;
+        if(!inside) flags.push({sev:"amber",msg:`${A.label} at ${fmt12(b.start)} falls outside your workday.`,fix:`Move inside ${fmt12(a.workStart)}–${fmt12(a.workEnd)}.`});
+        else if(b.type==="deepwork"&&b.start>a.workStart+3) flags.push({sev:"amber",msg:`Deep work starts ${fmt12(b.start)} — later in the workday your focus is already taxed.`,fix:`Front-load toward ${fmt12(a.workStart)}.`});
+      }
+      if(b.type==="light"&&b.start>a.wake+2) flags.push({sev:"amber",msg:`Light exposure at ${fmt12(b.start)} — the anchor lands hardest within an hour of waking.`,fix:`Move to just after ${fmt12(a.wake)}.`});
+    });
+    ["light","winddown"].forEach(t=>{ const n=blocks.filter(b=>b.type===t).length; if(n>1)flags.push({sev:"amber",msg:`${n}× ${ACT[t].label} in one day — should occur once.`,fix:`Remove the extra.`}); });
+    if(dwHrs>5)flags.push({sev:"red",msg:`${dwHrs.toFixed(1)} hours of deep work — beyond sustainable daily focus (~4h).`,fix:`Trim toward 3–4 hours.`});
+
+    return {total,sub:{circadian,cognitive,recovery,consistency:consistency.score},consistencyMeta:consistency,flags};
+  }
+
+  // consistency across all days that have blocks: low variance in wake-anchoring behaviors
+  function computeConsistency(){
+    // proxy each day by: first-block start (wake behavior), last-block end (sleep behavior), and mean meal time
+    const built=[];
+    week.forEach((bl,i)=>{
+      if(!bl.length)return;
+      const first=Math.min(...bl.map(b=>b.start));
+      const last=Math.max(...bl.map(b=>b.start+b.dur));
+      const meals=bl.filter(b=>b.type==="meal"); const mealMean=meals.length?meals.reduce((s,b)=>s+b.start,0)/meals.length:null;
+      built.push({first,last,mealMean});
+    });
+    if(built.length<2) return {score:70, days:built.length, note:built.length?"Build more days to measure regularity":"No days built yet"};
+    const std=arr=>{ const v=arr.filter(x=>x!=null); if(v.length<2)return 0; const m=v.reduce((a,b)=>a+b,0)/v.length; return Math.sqrt(v.reduce((s,x)=>s+(x-m)**2,0)/v.length); };
+    const wakeStd=std(built.map(d=>d.first));
+    const sleepStd=std(built.map(d=>d.last));
+    const mealStd=std(built.map(d=>d.mealMean));
+    // map std (hours) to 0-1: 0h std = perfect, 2h std = poor
+    const toScore=s=>Math.max(0,1-s/2);
+    const raw=(toScore(wakeStd)*0.45+toScore(sleepStd)*0.35+toScore(mealStd)*0.20);
+    return {score:Math.round(raw*100), days:built.length, wakeStd, sleepStd, mealStd,
+            note:`Across ${built.length} days · wake ±${(wakeStd*60).toFixed(0)}m, sleep ±${(sleepStd*60).toFixed(0)}m`};
+  }
+
+  // ================= RENDER =================
+  const tl=document.getElementById("lx-timeline");
+  const pal=document.getElementById("lx-palette");
+  const weekEl=document.getElementById("lx-week");
+
+  Object.entries(ACT).forEach(([k,A])=>{
+    const c=document.createElement("div"); c.className="lx-chip";
+    c.innerHTML=`<span class="swatch" style="background:${A.color}"></span>${A.label}`;
+    c.addEventListener("click",()=>addBlock(k)); pal.appendChild(c);
+  });
+
+  function renderWeek(){
+    weekEl.innerHTML="";
+    DAYS.forEach((d,i)=>{
+      const el=document.createElement("div"); el.className="lx-day"+(i===current?" active":"");
+      el.innerHTML=d[0]+(week[i].length?`<span class="fill"></span>`:"");
+      el.title=DAYFULL[i]+(week[i].length?` · ${week[i].length} blocks`:" · empty");
+      el.addEventListener("click",()=>{ current=i; renderAll(); });
+      weekEl.appendChild(el);
+    });
+    const actions=document.createElement("div"); actions.className="lx-weekactions";
+    weekEl.appendChild(actions);
+  }
+
+  function renderAnchors(){
+    document.getElementById("an-wake").textContent=fmt12(anchors.wake);
+    document.getElementById("an-sleep").textContent=fmt12(anchors.sleep);
+    document.getElementById("an-workstart").textContent=fmt12(anchors.workStart);
+    document.getElementById("an-workend").textContent=fmt12(anchors.workEnd);
+  }
+
+  function buildTimeline(){
+    tl.innerHTML="";
+    for(let h=START_H;h<END_H;h++){
+      const row=document.createElement("div"); row.className="lx-row";
+      const lab=document.createElement("div"); lab.className="lx-rowlabel"; lab.textContent=fmt12short(h);
+      const slot=document.createElement("div"); slot.className="lx-rowslot";
+      row.appendChild(lab); row.appendChild(slot); tl.appendChild(row);
+    }
+    // Workday band only on weekdays (Mon–Fri). Weekends have no 9–5.
+    const isWeekday = current>=1 && current<=5;
+    if(isWeekday){
+      const work=document.createElement("div"); work.className="lx-worklayer";
+      const band=document.createElement("div"); band.className="lx-workband";
+      band.style.top=((anchors.workStart-START_H)*PXH)+"px"; band.style.height=((anchors.workEnd-anchors.workStart)*PXH)+"px";
+      const wl=document.createElement("div"); wl.className="lx-worklabel"; wl.textContent="Workday"; band.appendChild(wl);
+      work.appendChild(band); tl.appendChild(work);
+    }
+    const layer=document.createElement("div"); layer.className="lx-blocklayer"; layer.id="lx-layer";
+    tl.appendChild(layer);
+    layer.addEventListener("pointerdown",onPointerDown);
+  }
+
+  function computeLanes(bs){
+    // Use VISUAL duration for overlap detection — a 15-min block is rendered at a
+    // minimum height, so it can visually collide with a neighbor even though the
+    // true durations don't overlap. Lane-packing must see what the eye sees.
+    const MIN_DUR = 26/PXH; // minimum render height expressed in hours
+    const vdur = b => Math.max(b.dur, MIN_DUR);
+    const sorted=[...bs].sort((a,b)=>a.start-b.start||a.id-b.id); const lanes={}; const visited=new Set();
+    sorted.forEach(seed=>{ if(visited.has(seed.id))return; let cluster=[seed]; visited.add(seed.id); let grew=true;
+      while(grew){ grew=false; sorted.forEach(o=>{ if(visited.has(o.id))return;
+        if(cluster.some(c=>o.start<c.start+vdur(c)&&c.start<o.start+vdur(o))){cluster.push(o);visited.add(o.id);grew=true;} }); }
+      const cols=[]; cluster.sort((a,b)=>a.start-b.start||a.id-b.id).forEach(c=>{ let placed=false;
+        for(let i=0;i<cols.length;i++){ const last=cols[i][cols[i].length-1]; if(c.start>=last.start+vdur(last)){cols[i].push(c);lanes[c.id]={lane:i};placed=true;break;} }
+        if(!placed){cols.push([c]);lanes[c.id]={lane:cols.length-1};} });
+      cluster.forEach(c=>lanes[c.id].of=cols.length);
+    });
+    return lanes;
+  }
+
+  function render(){
+    const layer=document.getElementById("lx-layer"); if(!layer)return; layer.innerHTML="";
+    const blocks=blocksNow(); const lanes=computeLanes(blocks);
+    blocks.forEach(b=>{
+      const A=ACT[b.type]||{label:b.label||"Custom",color:b.color||"#8C7B4E"};
+      const L=lanes[b.id]||{lane:0,of:1}; const w=100/L.of; const gap=4;
+      const el=document.createElement("div"); el.className="lx-block"; el.dataset.id=b.id;
+      // Minimum render height: a 15-min block is only ~7px, too short for any label.
+      // Draw it at MIN_H so the text fits. True duration is unchanged in the data —
+      // this is display only (same approach as Google Calendar / Fantastical).
+      const MIN_H = 26;
+      el.style.top=((b.start-START_H)*PXH)+"px";
+      const trueH = b.dur*PXH-4;
+      const hpx = Math.max(trueH, MIN_H);
+      el.style.height=hpx+"px";
+      if(trueH < MIN_H) el.dataset.stretched="1"; // visually taller than actual
+      el.style.left=`calc(${L.lane*w}% + ${L.lane?gap/2:3}px)`; el.style.width=`calc(${w}% - ${L.of>1?gap:6}px)`;
+      el.style.background=hexA(A.color,0.13); el.style.borderColor=hexA(A.color,0.4);
+      // Only show a SECOND line (and inline Why) when there's real vertical room for it.
+      // Otherwise everything goes on ONE line so nothing ever clips.
+      const twoLine = hpx>=52;
+      const narrow = L.of>=3;
+      el.title=`${A.label} · ${fmt12(b.start)} – ${fmt12(b.start+b.dur)} · ${durLabel(b.dur)}`;
+      if(twoLine){
+        el.innerHTML=`<div class="bt" style="color:${A.color}">${A.label}</div>
+          <div class="bs">${fmt12(b.start)} – ${fmt12(b.start+b.dur)}${narrow?'':' · '+durLabel(b.dur)}</div>
+          <div class="lx-resize-top" data-id="${b.id}"></div>
+          <div class="lx-resize" data-id="${b.id}"></div>`;
+      } else {
+        if(hpx<24) el.style.padding="2px 9px";
+        el.innerHTML=`<div class="bt" style="color:${A.color}; display:flex; gap:7px; align-items:baseline;">
+            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${A.label}</span>
+            <span style="color:var(--txt2); font-weight:400; font-size:10.5px; flex-shrink:0; font-variant-numeric:tabular-nums;">${fmt12(b.start)}</span>
+          </div>
+          <div class="lx-resize-top" data-id="${b.id}"></div>
+          <div class="lx-resize" data-id="${b.id}"></div>`;
+      }
+      layer.appendChild(el);
+    });
+    // TAP any block to open its panel (works on touch AND desktop — no hover needed)
+    layer.querySelectorAll(".lx-block").forEach(el=>{
+      el.addEventListener("click",e=>{
+        if(e.target.closest(".lx-resize")||e.target.closest(".lx-resize-top"))return;
+        if(dragMoved)return; // don't open panel after a drag
+        e.stopPropagation();
+        const b=blocksNow().find(bb=>bb.id==el.dataset.id); if(!b)return;
+        openPanel(b);
+      });
+    });
+
+    updateScore();
+  }
+
+  // ---- BLOCK PANEL: full detail, Why, editable time, delete. Tap-driven. ----
+  function openPanel(b){
+    closePanel();
+    const A=ACT[b.type]||{label:b.label||"Custom",color:b.color||"#8C7B4E"};
+    const wrap=document.createElement("div"); wrap.className="lx-sheet"; wrap.id="lx-active-panel";
+    wrap.innerHTML=`<div class="lx-sheet-in">
+        <div class="sh-top">
+          <div>
+            <div class="sh-title" style="color:${A.color}">${A.label}</div>
+            <div class="sh-time">${fmt12(b.start)} – ${fmt12(b.start+b.dur)} · ${durLabel(b.dur)}</div>
+          </div>
+          <span class="sh-x" id="sh-close">✕</span>
+        </div>
+        <div class="erow"><label>Start</label><input id="ed-start" value="${fmt12(b.start)}" placeholder="7:30 AM" /></div>
+        <div class="erow"><label>Length</label><input id="ed-dur" value="${durLabel(b.dur)}" placeholder="1h 30m" /></div>
+        <div class="sh-btns">
+          <button class="lx-btn" id="sh-save">Save time</button>
+          <button class="lx-btn ghost" id="sh-why">Why this placement</button>
+          <button class="lx-btn ghost" id="sh-del">Delete</button>
+        </div>
+        <div id="sh-why-out"></div>
+      </div>`;
+    document.querySelector(".lx").appendChild(wrap);
+    wrap.addEventListener("click",e=>{ if(e.target===wrap)closePanel(); });
+    document.getElementById("sh-close").addEventListener("click",closePanel);
+    const save=()=>{
+      const t=parseTime(document.getElementById("ed-start").value);
+      const d=parseDur(document.getElementById("ed-dur").value);
+      if(d!=null) b.dur=clamp(round15(d),0.25,END_H-START_H);
+      if(t!=null) b.start=clamp(round15(t),START_H,END_H-b.dur);
+      closePanel(); renderAll();
+    };
+    document.getElementById("sh-save").addEventListener("click",save);
+    wrap.querySelectorAll("input").forEach(i=>i.addEventListener("keydown",ev=>{ if(ev.key==="Enter")save(); if(ev.key==="Escape")closePanel(); }));
+    document.getElementById("sh-del").addEventListener("click",()=>{ week[current]=blocksNow().filter(x=>x.id!=b.id); closePanel(); renderAll(); });
+    document.getElementById("sh-why").addEventListener("click",()=>explainBlockInPanel(b));
+  }
+  function closePanel(){ const p=document.getElementById("lx-active-panel"); if(p)p.remove(); }
+
+  async function explainBlockInPanel(b){
+    const out=document.getElementById("sh-why-out"); if(!out)return;
+    const label=ACT[b.type]?ACT[b.type].label:b.label;
+    out.innerHTML=`<div class="lx-ai" style="margin-top:14px; margin-bottom:0;"><span class="lx-loading" style="color:var(--txt2)"></span></div>`;
+    const sys=profileText()+`
+
+The user tapped "Why" on one block. Explain how its placement affects them physiologically, in context of the whole day and their fixed workday. Use real mechanism (cortisol, core temp, adenosine, post-prandial dip, melatonin onset). Well-placed → brief and confident. Suboptimal → what's wrong + concrete fix. Depth by stakes. This user checks the work.
+
+Respond ONLY with valid JSON, no fences:
+{"severity":"ideal|good|suboptimal|conflict","headline":"one sentence","reasoning":"2-5 sentences","fix":"concrete fix or empty string"}`;
+    const usr=`Block: "${label}" at ${fmt12(b.start)}–${fmt12(b.start+b.dur)}.\n\n${dayContext()}`;
+    try{
+      const raw=await callAI(sys,usr); const r=JSON.parse(raw.replace(/```json|```/g,"").trim());
+      const cmap={ideal:"var(--green)",good:"var(--green)",suboptimal:"var(--amber)",conflict:"var(--red)"}; const c=cmap[r.severity]||"var(--txt2)";
+      const bgmap={"var(--green)":"rgba(127,154,107,0.15)","var(--amber)":"rgba(199,154,78,0.15)","var(--red)":"rgba(181,101,79,0.15)","var(--txt2)":"rgba(154,152,143,0.15)"};
+      out.innerHTML=`<div class="lx-ai" style="margin-top:14px; margin-bottom:0; border-color:${bgmap[c]}">
+        <div class="aihead" style="color:${c}"><span class="lx-pill" style="background:${bgmap[c]}; color:${c}">${r.severity}</span></div>
+        <div style="color:var(--txt)">${r.headline}</div>
+        <div style="color:var(--txt2); margin-top:6px">${r.reasoning}</div>
+        ${r.fix?`<div style="margin-top:8px; font-size:12px; color:var(--txt)">→ ${r.fix}</div>`:""}
+      </div>`;
+    }catch(err){ out.innerHTML=`<div class="lx-ai" style="margin-top:14px; border-color:rgba(181,101,79,0.4)"><span style="color:var(--red)">Why failed: ${err.message||err}</span></div>`; }
+  }
+  // parse "1h 30m", "45m", "2h", "1.5" (hours)
+  function parseDur(str){ if(str==null)return null; str=(""+str).trim().toLowerCase();
+    let h=0,m=0,matched=false;
+    const hm=str.match(/(\d+(?:\.\d+)?)\s*h/); if(hm){h=parseFloat(hm[1]);matched=true;}
+    const mm=str.match(/(\d+)\s*m/); if(mm){m=parseFloat(mm[1]);matched=true;}
+    if(!matched){ const n=parseFloat(str); if(!isNaN(n))return n; return null; }
+    return h+m/60;
+  }
+
+  let drag=null, dragMoved=false;
+  function onPointerDown(e){
+    const resizeBot=e.target.closest(".lx-resize");
+    const resizeTop=e.target.closest(".lx-resize-top");
+    const blockEl=e.target.closest(".lx-block");
+    if(!blockEl)return; if(e.target.closest(".bx"))return;
+    const b=blocksNow().find(x=>x.id==blockEl.dataset.id); if(!b)return;
+    const mode = resizeTop?"resizeTop" : resizeBot?"resize" : "move";
+    dragMoved=false;
+    drag={b,mode,startY:e.clientY,origStart:b.start,origDur:b.dur,origEnd:b.start+b.dur};
+    blockEl.setPointerCapture(e.pointerId);
+    window.addEventListener("pointermove",onPointerMove); window.addEventListener("pointerup",onPointerUp);
+  }
+  function onPointerMove(e){ if(!drag)return; const dh=(e.clientY-drag.startY)/PXH;
+    if(Math.abs(e.clientY-drag.startY)>4) dragMoved=true;
+    if(!dragMoved)return;
+    e.preventDefault();
+    if(drag.mode==="move"){
+      drag.b.start=clamp(round15(drag.origStart+dh),START_H,END_H-drag.b.dur);
+    } else if(drag.mode==="resize"){
+      drag.b.dur=clamp(round15(drag.origDur+dh),0.25,END_H-drag.b.start);
+    } else if(drag.mode==="resizeTop"){
+      const newStart=clamp(round15(drag.origStart+dh),START_H,drag.origEnd-0.25);
+      drag.b.start=newStart;
+      drag.b.dur=round15(drag.origEnd-newStart);
+    }
+    render(); }
+  function onPointerUp(){ drag=null; window.removeEventListener("pointermove",onPointerMove); window.removeEventListener("pointerup",onPointerUp);
+    setTimeout(()=>{dragMoved=false;},50); }
+
+  function addBlock(type,start){ const A=ACT[type]; const s=start!=null?start:clamp(A.ideal(anchors)-A.dur/2,START_H,END_H-A.dur);
+    blocksNow().push({id:uid++,type,start:clamp(round15(s),START_H,END_H-A.dur),dur:A.dur}); renderAll(); }
+
+  function updateScore(){
+    const blocks=blocksNow(); const r=scoreDay(blocks);
+    document.getElementById("lx-dayname").textContent=DAYFULL[current];
+    const scoreEl=document.getElementById("lx-score"),verdEl=document.getElementById("lx-verdict");
+    if(!blocks.length){ scoreEl.innerHTML=`—<span class="slash"> / 100</span>`; verdEl.textContent="";
+      document.getElementById("lx-subs").innerHTML=""; document.getElementById("lx-flags").innerHTML='<div class="lx-empty">Build your day to surface conflicts.</div>'; return; }
+    scoreEl.innerHTML=`${r.total}<span class="slash"> / 100</span>`; scoreEl.style.color=scoreColor(r.total);
+    verdEl.textContent=r.total>=82?"Precision-aligned":r.total>=64?"Refinements available":"Working against your physiology";
+    const subs=[["Circadian",r.sub.circadian,""],["Cognitive",r.sub.cognitive,""],["Recovery",r.sub.recovery,""],["Consistency",r.sub.consistency,r.consistencyMeta.note||""]];
+    document.getElementById("lx-subs").innerHTML=subs.map(([n,v,hint])=>`
+      <div class="lx-sub">
+        <div class="lx-subtop"><span class="n">${n}</span><span class="v">${v}</span></div>
+        <div class="lx-track"><div class="lx-fill" style="width:${v}%; background:${scoreColor(v)}"></div></div>
+        <div class="lx-subhint">${hint}</div>
+      </div>`).join("");
+    const fl=document.getElementById("lx-flags");
+    if(!r.flags.length) fl.innerHTML=`<div class="lx-flag" style="border-color:rgba(127,154,107,0.4)"><span style="color:var(--green)">No conflicts. The day is clean.</span></div>`;
+    else fl.innerHTML=r.flags.map(f=>{ const c=f.sev==="red"?"var(--red)":"var(--amber)"; const bc=f.sev==="red"?"rgba(181,101,79,0.4)":"rgba(199,154,78,0.35)";
+      return `<div class="lx-flag" style="border-color:${bc}"><span style="color:${c}">${f.msg}</span><span class="ff">→ ${f.fix}</span></div>`; }).join("");
+  }
+  function scoreColor(v){ return v>=82?"#7F9A6B":v>=64?"#C79A4E":"#B5654F"; }
+  function hexA(hex,a){ const n=parseInt(hex.slice(1),16); return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`; }
+
+  function renderAll(){ renderWeek(); renderAnchors(); buildTimeline(); render(); }
+
+  function toast(msg){ const t=document.getElementById("lx-toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1600); }
+
+  // ---------- ANCHOR EDITING ----------
+  document.querySelectorAll(".av").forEach(av=>{
+    av.addEventListener("click",()=>{
+      if(av.querySelector("input")) return; // already editing
+      const which=av.dataset.anchor; // wake | sleep | workStart | workEnd
+      const prevText=av.textContent;
+      const inp=document.createElement("input");
+      inp.value=fmt12(anchors[which]);
+      inp.style.cssText="width:92px;background:var(--card);border:1px solid var(--gold-dim);border-radius:6px;color:var(--txt);font-family:inherit;font-size:12px;text-align:center;padding:3px;outline:none;";
+      av.textContent=""; av.appendChild(inp); inp.focus(); inp.select();
+      let done=false;
+      const commit=()=>{
+        if(done)return; done=true;
+        const t=parseTime(inp.value);
+        if(t!=null){
+          anchors[which]=t;
+          if(which==="workStart" && anchors.workStart>=anchors.workEnd) anchors.workEnd=Math.min(24,anchors.workStart+1);
+          if(which==="workEnd" && anchors.workEnd<=anchors.workStart) anchors.workStart=Math.max(0,anchors.workEnd-1);
+        }
+        renderAll(); // span survives (we only emptied its text), so ids persist
+      };
+      const cancel=()=>{ if(done)return; done=true; av.textContent=prevText; };
+      inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){e.preventDefault();commit();} if(e.key==="Escape")cancel(); });
+      inp.addEventListener("blur",commit);
+    });
+  });
+
+  // ---------- COPY / PASTE / APPLY ----------
+  document.getElementById("lx-copy").addEventListener("click",()=>{ copyBuffer=blocksNow().map(b=>({...b})); toast(`${DAYFULL[current]} copied`); });
+  document.getElementById("lx-paste").addEventListener("click",()=>{ if(!copyBuffer){toast("Nothing copied yet");return;} week[current]=copyBuffer.map(b=>({...b,id:uid++})); toast(`Pasted into ${DAYFULL[current]}`); renderAll(); });
+  document.getElementById("lx-clear").addEventListener("click",()=>{ week[current]=[]; renderAll(); });
+  document.getElementById("lx-applyweekdays").addEventListener("click",()=>{ const src=blocksNow(); if(!src.length){toast("Current day is empty");return;}
+    [1,2,3,4,5].forEach(i=>{ week[i]=src.map(b=>({...b,id:uid++})); }); toast("Applied to Mon–Fri"); renderAll(); });
+
+  // ================= LIVE AI =================
+  function profileText(){ const a=anchors;
+    return `User's anchors:
+- Wake ${fmt12(a.wake)}, target sleep ${fmt12(a.sleep)}
+- FIXED workday ${fmt12(a.workStart)}–${fmt12(a.workEnd)} (cannot move work outside; optimize within)
+- Trains with weights, does fasted morning cardio
+- Elite optimizer wanting precise reasoning; depth only when warranted
+
+Placement principles:
+- Light within ~1h of waking; fasted cardio 0.5-2h after wake
+- Cognitively demanding work best EARLY in the fixed workday; guard the post-lunch dip; cannot precede work start
+- Hard training late afternoon/evening, never within 2h of sleep
+- Caffeine >=8-10h before sleep; large meals >=3h before sleep; wind-down 60-90min before sleep`; }
+
+  async function callAI(sys,usr){
+    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({max_tokens:1500,system:sys,messages:[{role:"user",content:usr}]})});
+    if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||("HTTP "+res.status)); }
+    const data=await res.json();
+    if(!data.content) throw new Error("No content in response");
+    return data.content.map(i=>i.type==="text"?i.text:"").filter(Boolean).join("\n");
+  }
+  function dayContext(){ const blocks=blocksNow(); if(!blocks.length)return "The day is empty.";
+    return "Current plan:\n"+blocks.slice().sort((a,b)=>a.start-b.start).map(b=>`- ${ACT[b.type]?ACT[b.type].label:b.label} ${fmt12(b.start)}–${fmt12(b.start+b.dur)}`).join("\n"); }
+
+  const aiText=document.getElementById("lx-ai-text"),aiTime=document.getElementById("lx-ai-time"),aiResp=document.getElementById("lx-ai-response");
+  const descInput=document.getElementById("lx-desc");
+
+  // ---- DESCRIBE YOUR DAY -> full schedule ----
+  async function buildDay(){
+    const text=descInput.value.trim(); if(!text)return;
+    aiResp.innerHTML=`<div class="lx-ai"><span class="lx-loading" style="color:var(--txt2)"></span></div>`;
+    const knownTypes=Object.keys(ACT).join(", ");
+    const sys=profileText()+`
+
+The user describes their whole day in plain language. Convert it into a full optimized schedule. Use known activity types where they fit (${knownTypes}); for anything else use type "custom" with your own label and a category (circadian|cognitive|recovery|physical|neutral). Place everything at physiologically sound times consistent with the user's description AND anchors — respect explicit times they give, optimize the rest. Keep it realistic (don't invent activities they didn't mention, but you may add an obvious wind-down if they read before bed).
+
+Respond ONLY with valid JSON, no fences:
+{"blocks":[{"type":"known-type-or-custom","label":"only if custom","category":"only if custom","start":"H:MM AM/PM","durationHours":number}], "note":"one sentence on how you placed things"}`;
+    const usr=`User's description: "${text}"`;
+    try{
+      const raw=await callAI(sys,usr); const r=JSON.parse(raw.replace(/```json|```/g,"").trim());
+      const newBlocks=(r.blocks||[]).map(bl=>{
+        const t=parseTime(bl.start)??(anchors.workStart); const dur=clamp(round15(bl.durationHours||0.75),0.25,5);
+        if(ACT[bl.type]) return {id:uid++,type:bl.type,start:clamp(t,START_H,END_H-dur),dur};
+        return {id:uid++,type:"custom",label:bl.label||"Activity",start:clamp(t,START_H,END_H-dur),dur,color:catColor(bl.category),custom:{category:bl.category||"neutral"}};
+      });
+      week[current]=newBlocks; descInput.value="";
+      aiResp.innerHTML=`<div class="lx-ai"><div class="aihead">◆ Day assembled</div><div style="color:var(--txt)">${r.note||"Placed your activities at physiologically optimal times."}</div><div class="airow"><button class="lx-btn ghost sm" id="lx-desc-dismiss">Dismiss</button></div></div>`;
+      document.getElementById("lx-desc-dismiss").addEventListener("click",()=>aiResp.innerHTML="");
+      renderAll();
+    }catch(err){ aiResp.innerHTML=`<div class="lx-ai" style="border-color:rgba(181,101,79,0.4)"><span style="color:var(--red)">Build failed: ${err.message||err}</span></div>`; }
+  }
+
+  async function interpret(){
+    const text=aiText.value.trim(); if(!text)return; const forced=parseTime(aiTime.value);
+    aiResp.innerHTML=`<div class="lx-ai"><span class="lx-loading" style="color:var(--txt2)"></span></div>`;
+    const sys=profileText()+`
+
+Interpret a free-text activity and place it at the single best time given the fixed workday and existing plan.${forced!=null?` The user REQUESTED ${fmt12(forced)} — evaluate THAT placement.`:""} Depth by stakes.
+
+Respond ONLY with valid JSON, no fences:
+{"activityLabel":"1-3 words","idealTime":"H:MM AM/PM","durationHours":number,"verdict":"one sentence","reasoning":"1-4 sentences","category":"circadian|cognitive|recovery|physical|neutral"}`;
+    const usr=`Activity: "${text}"${forced!=null?`\nRequested: ${fmt12(forced)}`:""}\n\n${dayContext()}`;
+    try{
+      const raw=await callAI(sys,usr); const r=JSON.parse(raw.replace(/```json|```/g,"").trim());
+      const t=forced!=null?forced:(parseTime(r.idealTime)??(anchors.workStart+0.5)); const dur=clamp(round15(r.durationHours||0.75),0.25,4);
+      aiResp.innerHTML=`<div class="lx-ai"><div class="aihead">◆ ${r.verdict}</div><div style="color:var(--txt)">${r.reasoning}</div>
+        <div class="aimeta">${r.activityLabel} · ${fmt12(t)} · ${durLabel(dur)} · ${r.category}</div>
+        <div class="airow"><button class="lx-btn sm" id="lx-place">Place at ${fmt12(t)}</button><button class="lx-btn ghost sm" id="lx-dismiss">Dismiss</button></div></div>`;
+      document.getElementById("lx-place").addEventListener("click",()=>{ blocksNow().push({id:uid++,type:"custom",label:r.activityLabel,start:clamp(t,START_H,END_H-dur),dur,color:catColor(r.category),custom:r}); aiText.value="";aiTime.value="";aiResp.innerHTML="";renderAll(); });
+      document.getElementById("lx-dismiss").addEventListener("click",()=>aiResp.innerHTML="");
+    }catch(err){ aiResp.innerHTML=`<div class="lx-ai" style="border-color:rgba(181,101,79,0.4)"><span style="color:var(--red)">Interpret failed: ${err.message||err}</span></div>`; }
+  }
+  function catColor(c){ return ({circadian:"#C6A968",cognitive:"#6E86B8",recovery:"#6B9A8C",physical:"#9A7BB5",neutral:"#8C7B4E"})[c]||"#8C7B4E"; }
+
+  async function explainBlock(b){
+    const panel=document.getElementById("lx-why"); const label=ACT[b.type]?ACT[b.type].label:b.label;
+    panel.innerHTML=`<div class="lx-ai" style="margin-top:12px"><span class="lx-loading" style="color:var(--txt2)"></span></div>`;
+    const sys=profileText()+`
+
+The user clicked "Why" on one block. Explain how its placement affects them, in context of the whole day and fixed workday. Well-placed → brief. Suboptimal → what's wrong + concrete fix. Depth by stakes.
+
+Respond ONLY with valid JSON, no fences:
+{"severity":"ideal|good|suboptimal|conflict","headline":"one sentence","reasoning":"2-5 sentences","fix":"concrete fix or empty string"}`;
+    const usr=`Block: "${label}" at ${fmt12(b.start)}–${fmt12(b.start+b.dur)}.\n\n${dayContext()}`;
+    try{
+      const raw=await callAI(sys,usr); const r=JSON.parse(raw.replace(/```json|```/g,"").trim());
+      const cmap={ideal:"var(--green)",good:"var(--green)",suboptimal:"var(--amber)",conflict:"var(--red)"}; const c=cmap[r.severity]||"var(--txt2)";
+      const bgmap={"var(--green)":"rgba(127,154,107,0.15)","var(--amber)":"rgba(199,154,78,0.15)","var(--red)":"rgba(181,101,79,0.15)","var(--txt2)":"rgba(154,152,143,0.15)"};
+      panel.innerHTML=`<div class="lx-ai" style="margin-top:12px; border-color:${bgmap[c]}">
+        <div class="aihead" style="color:${c}"><span class="lx-pill" style="background:${bgmap[c]}; color:${c}">${r.severity}</span> ${label} · ${fmt12(b.start)}</div>
+        <div style="color:var(--txt); margin-top:2px">${r.headline}</div><div style="color:var(--txt2); margin-top:6px">${r.reasoning}</div>
+        ${r.fix?`<div style="margin-top:8px; font-size:12px; color:var(--txt)">→ ${r.fix}</div>`:""}
+        <div class="airow"><button class="lx-btn ghost sm" id="lx-whyclose">Close</button></div></div>`;
+      document.getElementById("lx-whyclose").addEventListener("click",()=>panel.innerHTML="");
+    }catch(err){ panel.innerHTML=`<div class="lx-ai" style="margin-top:12px; border-color:rgba(181,101,79,0.4)"><span style="color:var(--red)">Why failed: ${err.message||err}</span></div>`; }
+  }
+
+  async function optimizeDay(){
+    const blocks=blocksNow();
+    if(!blocks.length){ toast("Build a day first"); return; }
+    const out=document.getElementById("lx-optimize-out");
+    const r=scoreDay(blocks);
+    out.innerHTML=`<div class="lx-opt"><span class="lx-loading" style="color:var(--txt2)"></span></div>`;
+    const sys=profileText()+`
+
+The user wants a dissection of their whole day organized around the FOUR PILLARS that make up their alignment score: Circadian, Cognitive, Recovery, and Consistency. For EACH pillar, explain what in their day is driving that specific score — with real physiological mechanism (cortisol, core temp, adenosine, HRV, post-prandial dip, melatonin onset, etc.), referencing actual block times. This user wants genuine scientific depth, not vague advice; they check the work. Be specific and mechanistic. Then give ranked, highest-leverage improvements.
+
+Keep each pillar analysis to 1-3 sentences — dense and mechanistic, not padded. If a pillar is strong, say why it's strong (don't invent problems). For consistency, note it's measured across the days they've built.
+
+Respond ONLY with valid JSON, no fences:
+{
+  "summary":"one-sentence honest verdict on the day",
+  "pillars":{
+    "circadian":"what's driving the circadian score + mechanism",
+    "cognitive":"what's driving the cognitive score + mechanism",
+    "recovery":"what's driving the recovery score + mechanism",
+    "consistency":"what's driving the consistency score"
+  },
+  "improvements":[{"change":"the specific move","gain":"which pillar it lifts and the mechanism why"}]
+}`;
+    const usr=`Sub-scores — Circadian ${r.sub.circadian}, Cognitive ${r.sub.cognitive}, Recovery ${r.sub.recovery}, Consistency ${r.sub.consistency}. Total ${r.total}.\n\n${dayContext()}`;
+    try{
+      const raw=await callAI(sys,usr); const d=JSON.parse(raw.replace(/```json|```/g,"").trim());
+      const P=d.pillars||{};
+      const pillarRow=(name,key,val)=>{
+        const col=scoreColor(val);
+        return `<div class="opillar">
+          <div class="opillar-top"><span class="opillar-name">${name}</span><span class="opillar-val" style="color:${col}">${val}</span></div>
+          <div class="opillar-track"><div class="opillar-fill" style="width:${val}%; background:${col}"></div></div>
+          <div class="opillar-text">${P[key]||""}</div>
+        </div>`;
+      };
+      const imps=(d.improvements||[]).map(i=>`<div class="oimp"><div class="ot">→ ${i.change}</div><div class="og">${i.gain}</div></div>`).join("");
+      out.innerHTML=`<div class="lx-opt">
+        <div class="oh">${d.summary}</div>
+        <div class="opillars">
+          ${pillarRow("Circadian","circadian",r.sub.circadian)}
+          ${pillarRow("Cognitive","cognitive",r.sub.cognitive)}
+          ${pillarRow("Recovery","recovery",r.sub.recovery)}
+          ${pillarRow("Consistency","consistency",r.sub.consistency)}
+        </div>
+        ${imps?`<div class="ogrp" style="margin-top:14px;"><div class="ogl" style="color:var(--gold)">Highest-leverage changes</div>${imps}</div>`:""}
+        <div class="airow"><button class="lx-btn ghost sm" id="lx-opt-close">Close</button></div>
+      </div>`;
+      document.getElementById("lx-opt-close").addEventListener("click",()=>out.innerHTML="");
+    }catch(err){ out.innerHTML=`<div class="lx-opt" style="border-color:rgba(181,101,79,0.4)"><span style="color:var(--red)">Optimize failed: ${err.message||err}</span></div>`; }
+  }
+
+  document.getElementById("lx-desc-go").addEventListener("click",buildDay);
+
+  // ---------- VOICE INPUT (Web Speech API) ----------
+  (function(){
+    const micBtn=document.getElementById("lx-mic");
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){ micBtn.style.display="none"; return; } // unsupported browser — hide it
+    let rec=null, listening=false;
+    micBtn.addEventListener("click",()=>{
+      if(listening){ if(rec)rec.stop(); return; }
+      rec=new SR();
+      rec.lang="en-US"; rec.interimResults=true; rec.continuous=false;
+      const descEl=document.getElementById("lx-desc");
+      const base=descEl.value ? descEl.value+" " : "";
+      rec.onstart=()=>{ listening=true; micBtn.classList.add("listening"); micBtn.textContent="⏹"; };
+      rec.onresult=(e)=>{
+        let txt="";
+        for(let i=0;i<e.results.length;i++) txt+=e.results[i][0].transcript;
+        descEl.value=base+txt;
+      };
+      rec.onerror=(e)=>{ toast(e.error==="not-allowed"?"Mic permission denied":"Voice error: "+e.error); };
+      rec.onend=()=>{ listening=false; micBtn.classList.remove("listening"); micBtn.textContent="🎤"; };
+      try{ rec.start(); }catch(err){ toast("Couldn't start mic"); }
+    });
+  })();
+  descInput.addEventListener("keydown",e=>{ if(e.key==="Enter")buildDay(); });
+  document.getElementById("lx-optimize").addEventListener("click",optimizeDay);
+  // Instant add — drop a custom activity on the timeline with no AI round-trip.
+  function addInstant(){
+    const text=aiText.value.trim(); if(!text)return;
+    const t=parseTime(aiTime.value);
+    const start = t!=null ? t : clamp(anchors.wake+3, START_H, END_H-0.75); // default: mid-morning
+    const dur=0.75;
+    blocksNow().push({
+      id:uid++, type:"custom", label:text,
+      start:clamp(round15(start),START_H,END_H-dur), dur,
+      color:"#8C7B4E", custom:{category:"neutral"}
+    });
+    aiText.value=""; aiTime.value=""; aiResp.innerHTML=""; renderAll();
+  }
+
+  document.getElementById("lx-ai-add").addEventListener("click",addInstant);
+  document.getElementById("lx-ai-go").addEventListener("click",interpret);
+  aiText.addEventListener("keydown",e=>{ if(e.key==="Enter")addInstant(); }); // Enter = fast add
+  aiTime.addEventListener("keydown",e=>{ if(e.key==="Enter")addInstant(); });
+
+  // ---------- SEED: a sample Monday so consistency has something once you copy ----------
+  const SAMPLE=[["light",6.5],["cardio",7],["caffeine",7.5],["deepwork",9],["meetings",11],["meal",12.5],["meetings",14],["training",17.5],["meal",18.5],["reading",20.5],["winddown",20.75]];
+  week[1]=SAMPLE.map(([t,s])=>({id:uid++,type:t,start:s,dur:ACT[t].dur}));
+  renderAll();
+})();
+</script>
+
+<script>
+// service worker for installability + offline shell
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(e => console.log("SW registration failed:", e));
+  });
+}
+</script>
+</body>
+</html>
