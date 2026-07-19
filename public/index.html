@@ -245,7 +245,7 @@
 
   <div class="lx-describe">
     <input class="lx-field grow" id="lx-desc" placeholder="Describe your day in plain words — “gym at 6, work 9 to 5 with meetings in the morning, dinner at 7, read before bed”" />
-    <button class="lx-btn ghost" id="lx-mic" title="Speak your day" aria-label="Voice input">🎤</button>
+    <button class="lx-btn ghost" id="lx-mic" title="Speak your day" aria-label="Voice input"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
     <button class="lx-btn" id="lx-desc-go">Build my day</button>
   </div>
 
@@ -862,20 +862,22 @@ Respond ONLY with valid JSON, no fences:
     const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!SR){ micBtn.style.display="none"; return; } // unsupported browser — hide it
     let rec=null, listening=false;
+    const MIC_SVG=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`;
+    const STOP_SVG=`<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="display:block;"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>`;
     micBtn.addEventListener("click",()=>{
       if(listening){ if(rec)rec.stop(); return; }
       rec=new SR();
       rec.lang="en-US"; rec.interimResults=true; rec.continuous=false;
       const descEl=document.getElementById("lx-desc");
       const base=descEl.value ? descEl.value+" " : "";
-      rec.onstart=()=>{ listening=true; micBtn.classList.add("listening"); micBtn.textContent="⏹"; };
+      rec.onstart=()=>{ listening=true; micBtn.classList.add("listening"); micBtn.innerHTML=STOP_SVG; };
       rec.onresult=(e)=>{
         let txt="";
         for(let i=0;i<e.results.length;i++) txt+=e.results[i][0].transcript;
         descEl.value=base+txt;
       };
       rec.onerror=(e)=>{ toast(e.error==="not-allowed"?"Mic permission denied":"Voice error: "+e.error); };
-      rec.onend=()=>{ listening=false; micBtn.classList.remove("listening"); micBtn.textContent="🎤"; };
+      rec.onend=()=>{ listening=false; micBtn.classList.remove("listening"); micBtn.innerHTML=MIC_SVG; };
       try{ rec.start(); }catch(err){ toast("Couldn't start mic"); }
     });
   })();
