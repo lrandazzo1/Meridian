@@ -682,7 +682,10 @@ Respond ONLY with valid JSON, no fences:
       drag.b.dur=round15(drag.origEnd-newStart);
     }
     render(); }
-  function onPointerUp(){ drag=null; window.removeEventListener("pointermove",onPointerMove); window.removeEventListener("pointerup",onPointerUp);
+  function onPointerUp(){
+    const wasDragging = drag && dragMoved;
+    drag=null; window.removeEventListener("pointermove",onPointerMove); window.removeEventListener("pointerup",onPointerUp);
+    if(wasDragging) saveState(); // persist the moved/resized block
     setTimeout(()=>{dragMoved=false;},50); }
 
   function addBlock(type,start){ const A=ACT[type]; const s=start!=null?start:clamp(A.ideal(anchors)-A.dur/2,START_H,END_H-A.dur);
@@ -909,6 +912,12 @@ Respond ONLY with valid JSON, no fences:
     sync();
     toggle.addEventListener("click",()=>{ root.classList.toggle("lx-inputs-collapsed"); sync(); });
   })();
+
+  // Safety net: persist on any page hide/unload, catching any interaction
+  // path that didn't explicitly save (belt and suspenders).
+  window.addEventListener("beforeunload", saveState);
+  window.addEventListener("pagehide", saveState);
+  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden") saveState(); });
 
   document.getElementById("lx-desc-go").addEventListener("click",buildDay);
 
