@@ -326,6 +326,26 @@
   let uid=1;
   let copyBuffer=null;
 
+  // ---------- PERSISTENCE (localStorage) ----------
+  const STORE_KEY="meridian_state_v1";
+  function saveState(){
+    try{
+      localStorage.setItem(STORE_KEY, JSON.stringify({ anchors, week, uid, savedAt:Date.now() }));
+    }catch(e){ /* storage full or blocked — fail silently, app still works in-memory */ }
+  }
+  function loadState(){
+    try{
+      const raw=localStorage.getItem(STORE_KEY);
+      if(!raw) return false;
+      const s=JSON.parse(raw);
+      if(!s || !Array.isArray(s.week) || s.week.length!==7) return false;
+      anchors = Object.assign({ wake:6.5, sleep:21.5, workStart:9, workEnd:17 }, s.anchors||{});
+      week = s.week;
+      uid = s.uid || (Math.max(1, ...week.flat().map(b=>b.id||0)) + 1);
+      return true;
+    }catch(e){ return false; }
+  }
+
   const ACT={
     light:   {label:"Light exposure",dur:0.5,color:"#C6A968",cat:"circadian",ideal:a=>a.wake+0.5,sigma:1.4,scores:["circadian"]},
     cardio:  {label:"Fasted cardio",dur:1,color:"#B5654F",cat:"physical",ideal:a=>a.wake+1,sigma:2.0,scores:["circadian","recovery"]},
@@ -691,7 +711,7 @@ Respond ONLY with valid JSON, no fences:
   function scoreColor(v){ return v>=82?"#7F9A6B":v>=64?"#C79A4E":"#B5654F"; }
   function hexA(hex,a){ const n=parseInt(hex.slice(1),16); return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`; }
 
-  function renderAll(){ renderWeek(); renderAnchors(); buildTimeline(); render(); }
+  function renderAll(){ renderWeek(); renderAnchors(); buildTimeline(); render(); saveState(); }
 
   function toast(msg){ const t=document.getElementById("lx-toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1600); }
 
@@ -938,9 +958,12 @@ Respond ONLY with valid JSON, no fences:
   aiText.addEventListener("keydown",e=>{ if(e.key==="Enter")addInstant(); }); // Enter = fast add
   aiTime.addEventListener("keydown",e=>{ if(e.key==="Enter")addInstant(); });
 
-  // ---------- SEED: a sample Monday so consistency has something once you copy ----------
+  // ---------- STARTUP: load saved state, or seed a sample day the first time ----------
   const SAMPLE=[["light",6.5],["cardio",7],["caffeine",7.5],["deepwork",9],["meetings",11],["meal",12.5],["meetings",14],["training",17.5],["meal",18.5],["reading",20.5],["winddown",20.75]];
-  week[1]=SAMPLE.map(([t,s])=>({id:uid++,type:t,start:s,dur:ACT[t].dur}));
+  if(!loadState()){
+    // no saved data yet → seed the sample Monday so the app isn't empty on first open
+    week[1]=SAMPLE.map(([t,s])=>({id:uid++,type:t,start:s,dur:ACT[t].dur}));
+  }
   renderAll();
 })();
 </script>
