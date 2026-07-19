@@ -21,25 +21,48 @@
 
   /* ---- MOBILE RESPONSIVE ---- */
   @media (max-width:700px){
-    .lx{ padding:14px !important; border-radius:0 !important; }
-    .lx-head{ flex-direction:column; gap:12px; }
-    .lx-anchors{ width:100%; justify-content:space-between; gap:10px; }
-    .lx-anchor{ text-align:left; flex:1; }
-    .lx-describe{ flex-direction:column; }
-    .lx-describe .lx-btn{ width:100%; }
-    .lx-inputrow{ flex-direction:column; }
-    .lx-inputrow .lx-field,.lx-inputrow .lx-btn{ width:100%; }
-    .lx-time{ width:100% !important; }
-    .lx-score{ font-size:64px !important; }
-    .lx-subs{ grid-template-columns:repeat(2,1fr) !important; gap:14px !important; }
+    .lx{ padding:12px !important; border-radius:0 !important; }
+    .lx-head{ flex-direction:column; gap:10px; margin-bottom:14px; }
+    .lx-anchors{ width:100%; justify-content:space-between; gap:6px; }
+    .lx-anchor{ text-align:center; flex:1; }
+    .lx-anchor .al{ font-size:8.5px !important; letter-spacing:0.06em !important; }
+    .lx-anchor .av{ font-size:11px !important; }
+
+    /* describe row: input grows, mic stays a small square beside it, build below */
+    .lx-describe{ flex-wrap:wrap; gap:8px; margin-bottom:8px; }
+    .lx-describe #lx-desc{ flex:1; min-width:0; order:1; }
+    .lx-describe #lx-mic{ order:2; width:44px; flex:0 0 44px; padding:0 !important; }
+    .lx-describe #lx-desc-go{ order:3; flex:1 1 100%; }
+
+    /* add-activity row: text full width, then time + Add + Interpret share a compact row */
+    .lx-inputrow{ flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    .lx-inputrow #lx-ai-text{ flex:1 1 100%; }
+    .lx-inputrow .lx-time{ flex:1 1 auto; width:auto !important; min-width:88px; }
+    .lx-inputrow #lx-ai-add{ flex:1 1 auto; }
+    .lx-inputrow #lx-ai-go{ flex:1 1 auto; }
+
+    .lx-score{ font-size:60px !important; }
+    .lx-subs{ grid-template-columns:repeat(2,1fr) !important; gap:12px !important; }
     .lx-lower{ grid-template-columns:1fr !important; }
-    .lx-day{ width:36px; height:36px; }
-    .lx-hero{ padding:22px 16px !important; }
-    .lx-rowlabel{ width:54px !important; font-size:9.5px !important; }
-    .lx-worklayer,.lx-blocklayer{ left:54px !important; }
-    .lx-palette{ gap:5px; }
-    .lx-chip{ font-size:11px; padding:6px 10px; }
+    .lx-day{ width:34px; height:34px; font-size:12px; }
+    .lx-week{ gap:4px; margin-bottom:12px; }
+    .lx-hero{ padding:18px 14px !important; margin-bottom:14px; }
+    .lx-rowlabel{ width:52px !important; font-size:9px !important; }
+    .lx-worklayer,.lx-blocklayer{ left:52px !important; }
+    .lx-palette{ gap:5px; margin-bottom:12px; }
+    .lx-chip{ font-size:11px; padding:5px 9px; }
+    .lx-field{ height:40px; }
+    .lx-btn{ height:40px; }
+
+    /* collapsible input cluster so the score can be reached instantly */
+    .lx-inputs-toggle{ display:flex !important; align-items:center; justify-content:center; gap:6px;
+      width:100%; height:38px; margin-bottom:12px; background:var(--card); border:1px solid var(--line2);
+      border-radius:10px; color:var(--txt2); font-size:12px; letter-spacing:0.04em; cursor:pointer; }
+    .lx-inputs-collapsed .lx-describe,
+    .lx-inputs-collapsed .lx-inputrow,
+    .lx-inputs-collapsed .lx-palette{ display:none !important; }
   }
+  .lx-inputs-toggle{ display:none; } /* hidden on desktop; mobile rule above overrides */
 </style>
 </head>
 <body>
@@ -242,6 +265,8 @@
   </div>
 
   <div class="lx-week" id="lx-week"></div>
+
+  <button class="lx-inputs-toggle" id="lx-inputs-toggle">＋ Add activities</button>
 
   <div class="lx-describe">
     <input class="lx-field grow" id="lx-desc" placeholder="Describe your day in plain words — “gym at 6, work 9 to 5 with meetings in the morning, dinner at 7, read before bed”" />
@@ -853,6 +878,17 @@ Respond ONLY with valid JSON, no fences:
       document.getElementById("lx-opt-close").addEventListener("click",()=>out.innerHTML="");
     }catch(err){ out.innerHTML=`<div class="lx-opt" style="border-color:rgba(181,101,79,0.4)"><span style="color:var(--red)">Optimize failed: ${err.message||err}</span></div>`; }
   }
+
+  // ---------- MOBILE: collapsible input cluster ----------
+  (function(){
+    const toggle=document.getElementById("lx-inputs-toggle");
+    const root=document.querySelector(".lx");
+    // start collapsed on small screens so the score/timeline are the first thing seen
+    if(window.matchMedia("(max-width:700px)").matches){ root.classList.add("lx-inputs-collapsed"); }
+    const sync=()=>{ toggle.textContent = root.classList.contains("lx-inputs-collapsed") ? "＋ Add activities" : "－ Hide inputs"; };
+    sync();
+    toggle.addEventListener("click",()=>{ root.classList.toggle("lx-inputs-collapsed"); sync(); });
+  })();
 
   document.getElementById("lx-desc-go").addEventListener("click",buildDay);
 
