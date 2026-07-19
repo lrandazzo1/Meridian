@@ -500,13 +500,9 @@
     // Mean carries most weight; the worst block only pulls down if it's genuinely
     // bad (<0.4), and even then gently. A day of well-placed anchors scores high
     // even alongside neutral logistics like commutes (which don't score at all).
-    const agg=arr=>{
+   const agg=arr=>{
       if(!arr.length)return 1;
-      const mean=arr.reduce((x,y)=>x+y,0)/arr.length;
-      const min=Math.min(...arr);
-      // only treat as an "offender" if it's actually poor; otherwise ignore it
-      const offender = min<0.4 ? min : mean;
-      return 0.75*mean + 0.25*offender;
+      return arr.reduce((x,y)=>x+y,0)/arr.length;
     };
     const counts={}; blocks.forEach(b=>counts[b.type]=(counts[b.type]||0)+1);
     let dup=0; ["light","winddown"].forEach(t=>{ if((counts[t]||0)>1)dup+=0.12*(counts[t]-1); });
