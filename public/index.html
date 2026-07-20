@@ -499,9 +499,20 @@
         for(let t=b.start; t<b.start+b.dur; t+=0.25){ const e=energyAt(t); sum+=e; n++; if(e>peak)peak=e; }
         const avg=n?sum/n:energyAt(center);
         // Reward the block for the BEST energy it captures (you allocated prime hours to it)
-        // while still accounting for the average. This stops long morning blocks from being
-        // dragged down by their tail, but a block entirely in the trough still scores low.
-        const energyFit=0.6*peak + 0.4*avg;
+        // while still accounting for the average.
+        let energyFit=0.6*peak + 0.4*avg;
+        // FIXED-WORK FAIRNESS: cognitive work placed INSIDE locked work hours isn't
+        // fully the user's choice — a 9–5 can't move the 2 PM meeting to the morning.
+        // So we lift the floor for in-work-hours blocks: they're judged on "reasonable
+        // given your job" rather than "you chose the trough." Work OUTSIDE work hours
+        // (a block the user genuinely chose to place, e.g. evening deep work) is scored
+        // normally — that placement really is on them.
+        const weekdayNow = current>=1 && current<=5;
+        const insideWork = weekdayNow && b.start>=a.workStart-0.01 && (b.start+b.dur)<=a.workEnd+0.01;
+        if(insideWork){
+          // pull the score up toward a "did your best within a fixed workday" baseline
+          energyFit = 0.55 + 0.45*energyFit; // floor ~0.55, still rewards good placement
+        }
         g = 0.8*energyFit + 0.2*g;
       }
 
@@ -1111,9 +1122,11 @@ Respond ONLY with valid JSON, no fences:
 
 The user clicked "Why" on one block. Explain how its placement affects them, in context of the whole day and fixed workday. Well-placed → brief. Suboptimal → what's wrong + concrete fix. Depth by stakes.
 
+RESPECT CONSTRAINTS: the user works fixed hours (given below) that are NOT movable. If a demanding block sits in a low-energy window because it's inside work hours, do NOT tell them to move it out of the workday or to their peak — that's impossible with a job. Instead give a fix they control: what to pair it with, caffeine/daylight timing to blunt the dip, or protecting their morning peak. Meals are protected — never suggest working through lunch. For a block the user fully controls (outside work hours), normal advice applies.
+
 Respond ONLY with valid JSON, no fences:
 {"severity":"ideal|good|suboptimal|conflict","headline":"one sentence","reasoning":"2-5 sentences","fix":"concrete fix or empty string"}`;
-    const usr=`Block: "${label}" at ${fmt12(b.start)}–${fmt12(b.start+b.dur)}.\n\n${dayContext()}`;
+    const usr=`Block: "${label}" at ${fmt12(b.start)}–${fmt12(b.start+b.dur)}. Fixed work hours: ${fmt12(anchors.workStart)}–${fmt12(anchors.workEnd)} (not movable).\n\n${dayContext()}`;
     try{
       const raw=await callAI(sys,usr); const r=JSON.parse(raw.replace(/```json|```/g,"").trim());
       const cmap={ideal:"var(--green)",good:"var(--green)",suboptimal:"var(--amber)",conflict:"var(--red)"}; const c=cmap[r.severity]||"var(--txt2)";
@@ -1137,6 +1150,15 @@ Respond ONLY with valid JSON, no fences:
 
 The user wants a dissection of their whole day organized around the FOUR PILLARS that make up their alignment score: Circadian, Cognitive, Recovery, and Consistency. For EACH pillar, explain what in their day is driving that specific score — with real physiological mechanism (cortisol, core temp, adenosine, HRV, post-prandial dip, melatonin onset, etc.), referencing actual block times. This user wants genuine scientific depth, not vague advice; they check the work. Be specific and mechanistic. Then give ranked, highest-leverage improvements.
 
+CRITICAL — RESPECT REAL-WORLD CONSTRAINTS. This user works a fixed job with set hours (given below as their workday). Their work hours are NOT movable. DO NOT suggest they move meetings or deep work out of their workday, take time off, or reschedule work-hour commitments to their circadian peak — that advice is useless to someone with a boss. Meals and breaks are protected human time, not slots to optimize into; never suggest working, reading dense material, or doing demanding cognitive tasks during lunch.
+
+Instead, when demanding work is stuck in a low-energy window (like the post-lunch trough) because the job requires it, give ACTIONABLE trough-survival and edge-of-day advice the user actually controls:
+- What KIND of work to slot into low-energy work hours (routine admin, email, collaborative meetings tolerate low individual focus; save these for the trough).
+- Caffeine timing (respecting their sleep target), a post-lunch daylight walk, or brief movement to blunt the dip.
+- Protecting the morning peak ruthlessly for the hardest cognitive work.
+- Optimizing the parts of the day they FULLY control — mornings before work, evenings, wind-down, meal/sleep timing, training placement.
+Frame improvements as things doable within a normal working life, not fantasy rescheduling.
+
 Keep each pillar analysis to 1-3 sentences — dense and mechanistic, not padded. If a pillar is strong, say why it's strong (don't invent problems). For consistency, note it's measured across the days they've built.
 
 Respond ONLY with valid JSON, no fences:
@@ -1148,9 +1170,9 @@ Respond ONLY with valid JSON, no fences:
     "recovery":"what's driving the recovery score + mechanism",
     "consistency":"what's driving the consistency score"
   },
-"improvements":[{"change":"the specific move","gain":"which pillar it lifts and the mechanism why. DO NOT invent, predict, or guess specific point values or numbers. Focus strictly on the biological gain."}]
+"improvements":[{"change":"the specific ACTIONABLE move (respecting fixed work hours)","gain":"which pillar it lifts and the mechanism why. DO NOT invent, predict, or guess specific point values or numbers. Focus strictly on the biological gain."}]
 }`;
-    const usr=`Sub-scores — Circadian ${r.sub.circadian}, Cognitive ${r.sub.cognitive}, Recovery ${r.sub.recovery}, Consistency ${r.sub.consistency}. Total ${r.total}.\n\n${dayContext()}`;
+    const usr=`Sub-scores — Circadian ${r.sub.circadian}, Cognitive ${r.sub.cognitive}, Recovery ${r.sub.recovery}, Consistency ${r.sub.consistency}. Total ${r.total}.\nFixed work hours: ${fmt12(anchors.workStart)}–${fmt12(anchors.workEnd)} (NOT movable).\n\n${dayContext()}`;
     try{
       const raw=await callAI(sys,usr); const d=JSON.parse(raw.replace(/```json|```/g,"").trim());
       const P=d.pillars||{};
