@@ -553,6 +553,13 @@
     const dwHrs=blocks.filter(b=>b.type==="deepwork").reduce((s,b)=>s+b.dur,0); if(dwHrs>6)dup+=0.05;
     const dampen=v=>Math.max(0,v*(1-dup));
     const circadian=Math.round(dampen(agg(cir))*100), cognitive=Math.round(dampen(agg(cog))*100), recovery=Math.round(dampen(agg(rec))*100);
+    // TEMP DEBUG — remove after diagnosing. Logs what's feeding each pillar.
+    if(window.__MERIDIAN_DEBUG){
+      console.log("CIR blocks:", cir.map(x=>x.toFixed(2)), "-> raw", Math.round(agg(cir)*100), "dampen", dup);
+      console.log("COG blocks:", cog.map(x=>x.toFixed(2)), "-> raw", Math.round(agg(cog)*100));
+      console.log("REC blocks:", rec.map(x=>x.toFixed(2)), "-> raw", Math.round(agg(rec)*100));
+      console.log("block types:", blocks.map(b=>b.type+(b.custom?("/"+b.custom.category):"")));
+    }
 
     // ---- REAL consistency: variance of wake/sleep-proxy/meal timing ACROSS built days ----
     const consistency=computeConsistency();
