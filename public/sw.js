@@ -1,5 +1,5 @@
 // Meridian service worker — caches the app shell, never the API.
-const CACHE = "meridian-v2";
+const CACHE = "meridian-v3";
 const SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", e => {
