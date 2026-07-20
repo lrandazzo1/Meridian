@@ -495,10 +495,13 @@
       // other. Averaging energy across the block's span rewards work placed on the
       // high part of the curve and penalizes work in the post-lunch trough.
       if((A.scores||[]).includes("cognitive")){
-        let sum=0,n=0;
-        for(let t=b.start; t<b.start+b.dur; t+=0.25){ sum+=energyAt(t); n++; }
-        const energyFit=n?sum/n:energyAt(center);
-        // blend: mostly the real energy curve, lightly the activity's own ideal window
+        let sum=0,n=0,peak=0;
+        for(let t=b.start; t<b.start+b.dur; t+=0.25){ const e=energyAt(t); sum+=e; n++; if(e>peak)peak=e; }
+        const avg=n?sum/n:energyAt(center);
+        // Reward the block for the BEST energy it captures (you allocated prime hours to it)
+        // while still accounting for the average. This stops long morning blocks from being
+        // dragged down by their tail, but a block entirely in the trough still scores low.
+        const energyFit=0.6*peak + 0.4*avg;
         g = 0.8*energyFit + 0.2*g;
       }
 
@@ -518,13 +521,25 @@
     // Mean carries most weight; the worst block only pulls down if it's genuinely
     // bad (<0.4), and even then gently. A day of well-placed anchors scores high
     // even alongside neutral logistics like commutes (which don't score at all).
-   const agg=arr=>{
+    // Reward-based aggregation: a day should be judged by how well-placed its
+    // activities are ON THE WHOLE. The mean sets the baseline, and we lift it
+    // toward the BETTER-placed blocks (you get credit for the good choices) while
+    // a genuinely-bad block (<0.35) pulls down only gently rather than dominating.
+    // This stops one forced compromise (e.g. afternoon deep work behind a 9–5)
+    // from tanking a day that is otherwise dialed in.
+    const agg=arr=>{
       if(!arr.length)return 1;
-      return arr.reduce((x,y)=>x+y,0)/arr.length;
+      const mean=arr.reduce((x,y)=>x+y,0)/arr.length;
+      const sorted=[...arr].sort((a,b)=>b-a);
+      const topHalf=sorted.slice(0, Math.max(1, Math.ceil(sorted.length/2)));
+      const topMean=topHalf.reduce((x,y)=>x+y,0)/topHalf.length; // reward good placements
+      const worst=Math.min(...arr);
+      const penalty=worst<0.35 ? (0.35-worst)*0.4 : 0; // gentle ding for a truly bad block
+      return Math.max(0, Math.min(1, 0.5*mean + 0.5*topMean - penalty));
     };
     const counts={}; blocks.forEach(b=>counts[b.type]=(counts[b.type]||0)+1);
     let dup=0; ["light","winddown"].forEach(t=>{ if((counts[t]||0)>1)dup+=0.12*(counts[t]-1); });
-    const dwHrs=blocks.filter(b=>b.type==="deepwork").reduce((s,b)=>s+b.dur,0); if(dwHrs>5)dup+=0.10;
+    const dwHrs=blocks.filter(b=>b.type==="deepwork").reduce((s,b)=>s+b.dur,0); if(dwHrs>6)dup+=0.05;
     const dampen=v=>Math.max(0,v*(1-dup));
     const circadian=Math.round(dampen(agg(cir))*100), cognitive=Math.round(dampen(agg(cog))*100), recovery=Math.round(dampen(agg(rec))*100);
 
